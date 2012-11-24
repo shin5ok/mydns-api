@@ -70,7 +70,7 @@ sub _get_data {
   my $hash_ref = decode_json $json;
   warn Dumper $hash_ref if exists $ENV{DEBUG};
 
-  return $hash_ref->{info};
+  return $hash_ref->{data};
 
 }
 

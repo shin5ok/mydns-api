@@ -1,8 +1,9 @@
 use strict;
 use warnings;
 
-package MyDNS 0.01 {
+package MyDNS::API 0.01 {
   use Carp;
+  use Data::Dumper;
   use Class::Accessor::Lite (
     rw => [qw( db )],
   );
@@ -63,6 +64,11 @@ package MyDNS 0.01 {
 
   sub regist {
     my ($self, $domain, $args) = @_;
+    warn $domain;
+    warn Dumper $args;
+
+    $domain =~ /\.$/
+      or $domain = qq{${domain}.};
 
     $domain =~ /\.$/
       or $domain = $domain . q{.};
