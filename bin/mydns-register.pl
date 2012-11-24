@@ -6,7 +6,6 @@ use URI;
 use Data::Dumper;
 use JSON;
 
-use lib qw(/home/kawano/mydns-api/lib);
 use MyDNS::API;
 
 my $domain = shift || "example.com";

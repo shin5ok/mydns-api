@@ -6,6 +6,7 @@ package MyDNS 0.01 {
   use Class::Accessor::Lite (
     rw => [qw( db )],
   );
+  use IPC::Cmd qw(run);
   use DBIx::Class;
   use DBIx::Class::Schema::Loader;
   use base qw(DBIx::Class::Schema::Loader);
@@ -51,6 +52,15 @@ package MyDNS 0.01 {
   #   },
   # }
 
+  sub get_domain_id {
+    my ($self, $domain) = @_;
+
+    my $soa_rs = $self->db->resultset('Soa');
+    my ($zone) = $soa_rs->search({ origin => $domain });
+    return $zone->id;
+
+  }
+
   sub regist {
     my ($self, $domain, $args) = @_;
 
@@ -58,7 +68,6 @@ package MyDNS 0.01 {
       or $domain = $domain . q{.};
 
     my $soa_rs = $self->db->resultset('Soa');
-    warn Dumper $args;
 
     if (exists $args->{soa}) {
       my $soa = $args->{soa};
@@ -77,9 +86,8 @@ package MyDNS 0.01 {
         my $name  = $rr->{name};
         my $type  = $rr->{type};
 
-        my ($zone) = $soa_rs->search({ origin => $domain });
+        my $zone_id = $self->get_domain_id( $domain );
 
-        my $zone_id = $zone->id;
         $args->{rr}->{zone} = $zone_id;
 
         my $rr_rs = $self->db->resultset('Rr');
@@ -92,6 +100,38 @@ package MyDNS 0.01 {
 
     }
     return 1;
+
+  }
+
+
+  sub send_notify {
+    my $self   = shift;
+    my $domain = shift;
+    # NSレコード を収集
+
+    my $nameservers = qq{}:
+
+    my $rr_rs   = $self->db->resultset('Rr');
+    my $zone_id = $self->get_domain_id( $domain );
+
+    my @results = $rr_rs->search({ type => 'NS', zone => $zone_id });
+    for my $result ( @results ) {
+      my $ns = $result->data;
+      $ns =~ /\.$domain$/
+        or $ns .= ".${domain}";
+
+      $nameservers
+        and $nameservers .= " ";
+
+      $nameservers .= $ns;
+
+    }
+
+    if ($nameservers) {
+      my $command = sprintf "zonenotify %s %s", $domain, $nameservers;
+      run(command => $command);
+    }
+
 
   }
 
