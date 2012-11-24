@@ -5,10 +5,11 @@ use LWP::UserAgent;
 use URI;
 use Data::Dumper;
 use JSON;
-
+use Carp;
 use MyDNS::API;
 
-my $domain = shift || "example.com";
+my $domain = shift;
+$domain or croak "*** domain is empty";
 
 my $api_key      = $ENV{MURAKUMO_API_KEY};
 my $api_base_uri = $ENV{MURAKUMO_API_URI};

@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package MyDNS::API 0.01 {
+package MyDNS::API 0.02 {
   use Carp;
   use Data::Dumper;
   use Class::Accessor::Lite (
