@@ -60,7 +60,11 @@ package MyDNS::API 0.01 {
     $domain =~ /\.$/
       or $domain = qq{${domain}.};
 
+    $domain =~ /\.$/
+      or $domain = $domain . q{.};
+
     my $soa_rs = $self->db->resultset('Soa');
+    warn Dumper $args;
 
     if (exists $args->{soa}) {
       my $soa = $args->{soa};
