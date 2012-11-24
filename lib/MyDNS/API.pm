@@ -54,7 +54,11 @@ package MyDNS 0.01 {
   sub regist {
     my ($self, $domain, $args) = @_;
 
+    $domain =~ /\.$/
+      or $domain = $domain . q{.};
+
     my $soa_rs = $self->db->resultset('Soa');
+    warn Dumper $args;
 
     if (exists $args->{soa}) {
       my $soa = $args->{soa};
