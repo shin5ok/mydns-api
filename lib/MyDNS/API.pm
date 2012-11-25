@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-package MyDNS::API 0.02 {
+package MyDNS::API 0.03 {
   use Carp;
   use Data::Dumper;
   use Class::Accessor::Lite (
@@ -9,6 +9,7 @@ package MyDNS::API 0.02 {
   );
   use IPC::Cmd qw(run);
   use DBIx::Class;
+  use Smart::Args;
   use DBIx::Class::Schema::Loader;
   use base qw(DBIx::Class::Schema::Loader);
 
@@ -19,13 +20,21 @@ package MyDNS::API 0.02 {
   );
 
   sub new {
-    my ($class, @args) = @_;
+    args my $class,
+         my $domain      => 'Str',
+         my $dsn         => { isa => 'Str' },
+         my $db_user     => { isa => 'Str', optional => 1 },
+         my $db_password => { isa => 'Str', optional => 1 };
 
-    my $db = $class->connect(@args);
-
+    my @args = ($dsn);
+    push @args, $db_user     if defined $db_user;
+    push @args, $db_password if defined $db_password;
+         
     my $obj = bless {
-                db     => $db,
+                db => $class->connect( @args ),
               }, $class;
+
+    $obj->domain( $domain );
 
     return $obj;
 
@@ -53,25 +62,35 @@ package MyDNS::API 0.02 {
   #   },
   # }
 
+  sub domain {
+     my $self   = shift;
+     my $domain = shift;
+
+    if (defined $domain) {
+      $domain =~ /\.$/
+        or $domain = $domain . q{.};
+      $self->{domain} = $domain;
+
+    }
+    return $self->{domain};
+
+  }
+
+
   sub get_domain_id {
-    my ($self, $domain) = @_;
+    my $self = shift;
 
     my $soa_rs = $self->db->resultset('Soa');
-    my ($zone) = $soa_rs->search({ origin => $domain });
+    my ($zone) = $soa_rs->search({ origin => $self->domain });
     return $zone->id;
 
   }
 
+
   sub regist {
-    my ($self, $domain, $args) = @_;
-    warn $domain;
-    warn Dumper $args;
+    my ($self, $args) = @_;
 
-    $domain =~ /\.$/
-      or $domain = qq{${domain}.};
-
-    $domain =~ /\.$/
-      or $domain = $domain . q{.};
+    my $domain = $self->domain;
 
     my $soa_rs = $self->db->resultset('Soa');
 
@@ -92,7 +111,7 @@ package MyDNS::API 0.02 {
         my $name  = $rr->{name};
         my $type  = $rr->{type};
 
-        my $zone_id = $self->get_domain_id( $domain );
+        my $zone_id = $self->get_domain_id( domain => $domain );
 
         $args->{rr}->{zone} = $zone_id;
 
@@ -112,10 +131,11 @@ package MyDNS::API 0.02 {
 
   sub send_notify {
     my $self   = shift;
-    my $domain = shift;
-    # NSレコード を収集
 
-    my $nameservers = qq{}:
+    my $domain = $self->domain;
+
+    # NSレコード を収集
+    my $nameservers = qq{};
 
     my $rr_rs   = $self->db->resultset('Rr');
     my $zone_id = $self->get_domain_id( $domain );
@@ -143,8 +163,6 @@ package MyDNS::API 0.02 {
 
 
 }
-
-1;
 
 1;
 __END__

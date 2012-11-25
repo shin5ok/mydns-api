@@ -29,7 +29,12 @@ my $hash_ref = decode_json $json;
 
 my $ip_data = $hash_ref->{data};
 
-my $api = MyDNS::API->new('dbi:mysql:database=mydns', $db_user, $db_password);
+my $api = MyDNS::API->new({
+                            domain      => $domain,
+                            dsn         => 'dbi:mysql:database=mydns', 
+                            db_user     => $db_user, 
+                            db_password => $db_password,
+                          });
 
 for my $vlan_id ( 101..106 ) {
   for my $ip (@{$ip_data->{$vlan_id}}) {
@@ -39,7 +44,6 @@ for my $vlan_id ( 101..106 ) {
     my $data = _get_data ( $ip->{used} );
 
     $api->regist(
-      $domain,
       {
         rr => {
           data => $ip->{ip},
@@ -61,8 +65,6 @@ sub _get_data {
   $uri->query_form(
     key => $api_key,
   );
-
-  warn $uri;
 
   my $ua = LWP::UserAgent->new;
   my $response = $ua->get( $uri );
