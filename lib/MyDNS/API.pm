@@ -5,7 +5,7 @@ package MyDNS::API 0.03 {
   use Carp;
   use Data::Dumper;
   use Class::Accessor::Lite (
-    rw => [qw( db )],
+    rw => [qw( db auto_notify changed )],
   );
   use IPC::Cmd qw(run);
   use DBIx::Class;
@@ -23,15 +23,18 @@ package MyDNS::API 0.03 {
     args my $class,
          my $domain      => 'Str',
          my $dsn         => { isa => 'Str' },
-         my $db_user     => { isa => 'Str', optional => 1 },
-         my $db_password => { isa => 'Str', optional => 1 };
+         my $db_user     => { isa => 'Str',  optional => 1 },
+         my $db_password => { isa => 'Str',  optional => 1 },
+         my $auto_notify => { isa => 'Bool', optional => 1, default => 0 };
 
     my @args = ($dsn);
     push @args, $db_user     if defined $db_user;
     push @args, $db_password if defined $db_password;
          
     my $obj = bless {
-                db => $class->connect( @args ),
+                db          => $class->connect( @args ),
+                changed     => 0,
+                auto_notify => $auto_notify,
               }, $class;
 
     $obj->domain( $domain );
@@ -101,6 +104,8 @@ package MyDNS::API 0.03 {
 
       $soa_rs->update_or_create($args->{soa}, { origin => $domain });
 
+      $self->changed(1);
+
     }
 
     if (exists $args->{rr}) {
@@ -117,6 +122,8 @@ package MyDNS::API 0.03 {
 
         my $rr_rs = $self->db->resultset('Rr');
         $rr_rs->update_or_create($args->{rr}, { name => $name, type => $type, zone => $zone_id });
+
+        $self->changed(1);
 
       } else {
         croak "*** name or type in rr is not found";
@@ -153,11 +160,25 @@ package MyDNS::API 0.03 {
 
     }
 
+    my $r;
     if ($nameservers) {
       my $command = sprintf "zonenotify %s %s", $domain, $nameservers;
-      run(command => $command);
+      $r = run(command => $command);
+
+      $r or warn "*** $command is failure";
+
     }
 
+
+  }
+
+
+  sub DESTROY {
+    my $self = shift;
+
+    if ($self->auto_notify and $self->changed) {
+      $self->send_notify;
+    }
 
   }
 
