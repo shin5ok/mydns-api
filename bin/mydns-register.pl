@@ -8,8 +8,10 @@ use JSON;
 use Carp;
 use MyDNS::API;
 
-my $domain = shift;
-$domain or croak "*** domain is empty";
+my $domain   = shift;
+my @vlan_ids = @ARGV;
+$domain       or croak "*** domain is empty";
+@vlan_ids > 0 or croak "*** no vlan id";
 
 my $api_key      = $ENV{MURAKUMO_API_KEY};
 my $api_base_uri = $ENV{MURAKUMO_API_URI};
@@ -36,7 +38,7 @@ my $api = MyDNS::API->new({
                             db_password => $db_password,
                           });
 
-for my $vlan_id ( 101..106 ) {
+for my $vlan_id ( @vlan_ids ) {
   for my $ip (@{$ip_data->{$vlan_id}}) {
     $ip->{used} or next;
     $ip eq '1' and next;
