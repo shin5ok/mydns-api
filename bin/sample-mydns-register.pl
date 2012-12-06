@@ -18,19 +18,6 @@ my $api_base_uri = $ENV{MURAKUMO_API_URI};
 my $db_user      = $ENV{MYSQLD_USER};
 my $db_password  = $ENV{MYSQLD_PASSWORD};
 
-my $uri = URI->new( qq{$api_base_uri/ip/list} );
-$uri->query_form(
-  key => $api_key,
-);
-
-my $ua = LWP::UserAgent->new;
-my $response = $ua->get( $uri );
-
-my $json = $response->content;
-my $hash_ref = decode_json $json;
-
-my $ip_data = $hash_ref->{data};
-
 my $api = MyDNS::API->new({
                             domain      => $domain,
                             dsn         => 'dbi:mysql:database=mydns', 
@@ -38,25 +25,79 @@ my $api = MyDNS::API->new({
                             db_password => $db_password,
                           });
 
-for my $vlan_id ( @vlan_ids ) {
-  for my $ip (@{$ip_data->{$vlan_id}}) {
-    $ip->{used} or next;
-    $ip eq '1' and next;
+my $ua = LWP::UserAgent->new;
 
-    my $data = _get_data ( $ip->{used} );
+{
+  my $uri = URI->new( qq{$api_base_uri/ip/list} );
+  $uri->query_form(
+    key => $api_key,
+  );
 
-    $api->regist(
-      {
-        rr => {
-          data => $ip->{ip},
-          name => $data->{name},
-          type => q{A},
+  my $response = $ua->get( $uri );
+  
+  my $json = $response->content;
+  my $hash_ref = decode_json $json;
+  
+  my $ip_data = $hash_ref->{data};
+  warn Dumper $ip_data;
+  
+  for my $vlan_id ( @vlan_ids ) {
+    for my $ip (@{$ip_data->{$vlan_id}}) {
+      $ip->{used} or next;
+      $ip eq '1' and next;
+  
+      my $data = _get_data ( $ip->{used} );
+  
+      local $@;
+      eval {
+        $api->regist(
+          {
+            rr => {
+              data => $ip->{ip},
+              name => $data->{name},
+              type => q{A},
+  
+            },
+          }
+        );
+      };
+      warn $@ if $@;
+  
+    }
+  }
+}
 
+{
+  my $uri = URI->new( qq{$api_base_uri/node/list} );
+  $uri->query_form(
+    key => $api_key,
+  );
+
+  my $response = $ua->get( $uri );
+  
+  my $json = $response->content;
+  my $hash_ref = decode_json $json;
+  
+  my $data = $hash_ref->{data};
+
+  for my $x ( @$data ) {
+    local $@;
+    eval {
+      $api->regist(
+        {
+          rr => {
+            data => $x->{ip},
+            name => $x->{name},
+            type => q{A},
+          },
         },
-      }
-    );
+      );
+
+    };
+    warn $@ if $@;
 
   }
+  
 }
 
 
