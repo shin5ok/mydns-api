@@ -131,7 +131,18 @@ package MyDNS::API 0.03 {
       }
 
     }
-    return 1;
+
+    $self->serial_up;
+
+  }
+
+
+  sub serial_up {
+    my $self = shift;
+
+    my $sql = sprintf "update soa set serial = serial + 1 where origin = '%s'", $self->domain;
+    my $dbh = $self->db->storage->dbh;
+    $dbh->do($sql);
 
   }
 
