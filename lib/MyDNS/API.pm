@@ -1,13 +1,14 @@
 use strict;
 use warnings;
 
-package MyDNS::API 0.03 {
+package MyDNS::API 0.05 {
   use Carp;
   use Data::Dumper;
   use Class::Accessor::Lite (
     rw => [qw( db auto_notify changed )],
   );
   use IPC::Cmd qw(run);
+  use POSIX q(strftime);
   use DBIx::Class;
   use Smart::Args;
   use DBIx::Class::Schema::Loader;
@@ -90,6 +91,96 @@ package MyDNS::API 0.03 {
   }
 
 
+  sub zone_clone {
+    warn Dumper \@_;
+    my ($self, $src_domain, $args) = @_;
+
+    if (! $src_domain) {
+      croak "*** clone src domain is empty";
+
+    }
+
+    $src_domain =~ /\.$/
+      or $src_domain = $src_domain . ".";
+
+    my $dst_domain = $self->domain;
+
+    my $soa_rs    = $self->db->resultset('Soa');
+    my ($src_soa) = $soa_rs->search( { origin => $src_domain } );
+
+    #*************************** 4. row ***************************
+    #         id: 4
+    #     origin: cloud.sq.mcnet.jp.
+    #         ns: cloud.sq.mcnet.jp.
+    #       mbox: postmaster.cloud.sq.mcnet.jp.
+    #     serial: 488
+    #    refresh: 300
+    #      retry: 7200
+    #     expire: 604800
+    #    minimum: 86400
+    #        ttl: 86400
+
+    my %soa_param = (
+       origin => $dst_domain,
+       ns     => $src_soa->ns,
+       mbox   => $src_soa->mbox,
+       serial => (strftime "%Y%m%d00", localtime),
+      refresh => $src_soa->refresh,
+        retry => $src_soa->retry,
+       expire => $src_soa->expire,
+      minimum => $src_soa->minimum,
+          ttl => $src_soa->ttl,
+    );
+
+    if (my $also_notify = $src_soa->can("also_notify")) {
+      $soa_param{"also_notify"} = $src_soa->$also_notify;
+
+    }
+
+    $self->regist({ soa => \%soa_param });
+
+    my ($dst_soa) = $soa_rs->search({ origin => $dst_domain });
+
+    #*************************** 62. row ***************************
+    #  id: 208
+    #zone: 4
+    #name: managed-apache-test001
+    #data: 203.211.191.2
+    # aux: 0
+    # ttl: 86400
+    #type: A
+
+    my $rr_rs = $self->db->resultset('Rr');
+
+    my (@src_rres) = $rr_rs->search({ zone => $src_soa->id });
+
+    warn @src_rres ."\n";
+
+    no strict 'refs';
+    for my $src_rr ( @src_rres ) {
+      my $data = $src_rr->type eq 'A'
+               ? $args->{ip}
+               : $src_rr->data;
+
+      $data =~ s/(\.?)${src_domain}(\.?)$/${1}${dst_domain}${2}/;
+
+      my %rr_param = (
+        zone => $dst_soa->id,
+        name => $src_rr->name,
+        data => $data || $src_rr->data,
+        aux  => $src_rr->aux,
+        # ttl  =>
+        type => $src_rr->type,
+
+      );
+
+      $self->regist({ rr => \%rr_param });
+
+    }
+
+  }
+
+
   sub regist {
     my ($self, $args) = @_;
 
@@ -110,8 +201,8 @@ package MyDNS::API 0.03 {
 
     if (exists $args->{rr}) {
       my $rr = $args->{rr};
-
-      if ($rr->{name} and $rr->{type}) {
+  
+      if ($rr->{type}) {
 
         my $name  = $rr->{name};
         my $type  = $rr->{type};
@@ -126,13 +217,13 @@ package MyDNS::API 0.03 {
         $self->changed(1);
 
       } else {
-        croak "*** name or type in rr is not found";
+        croak "*** type for rr is not found";
 
       }
 
     }
 
-    $self->serial_up;
+    $self->changed and $self->serial_up;
 
   }
 
@@ -142,7 +233,8 @@ package MyDNS::API 0.03 {
 
     my $sql = sprintf "update soa set serial = serial + 1 where origin = '%s'", $self->domain;
     my $dbh = $self->db->storage->dbh;
-    $dbh->do($sql);
+    $dbh->do($sql)
+      or croak "*** error serial up";
 
   }
 
@@ -161,8 +253,9 @@ package MyDNS::API 0.03 {
     my @results = $rr_rs->search({ type => 'NS', zone => $zone_id });
     for my $result ( @results ) {
       my $ns = $result->data;
-      $ns =~ /\.$domain$/
-        or $ns .= ".${domain}";
+      if ($ns !~ /\.$domain$/ and $ns !~ /\.$/) {
+        $ns .= ".${domain}";
+      }
 
       $nameservers
         and $nameservers .= " ";
@@ -176,6 +269,8 @@ package MyDNS::API 0.03 {
       my $command = sprintf "zonenotify %s %s", $domain, $nameservers;
       $r = run(command => $command);
 
+      exists $ENV{DEBUG} and warn $command;
+
       $r or warn "*** $command is failure";
 
     }
@@ -188,13 +283,15 @@ package MyDNS::API 0.03 {
     my $self = shift;
 
     if ($self->auto_notify and $self->changed) {
+      exists $ENV{DEBUG}
+        and warn "send notify auto";
       $self->send_notify;
     }
 
   }
 
-
 }
+
 
 1;
 __END__
