@@ -92,7 +92,6 @@ package MyDNS::API 0.05 {
 
 
   sub zone_clone {
-    warn Dumper \@_;
     my ($self, $src_domain, $args) = @_;
 
     if (! $src_domain) {
@@ -103,9 +102,20 @@ package MyDNS::API 0.05 {
     $src_domain =~ /\.$/
       or $src_domain = $src_domain . ".";
 
+    my $error = 0;
+
     my $dst_domain = $self->domain;
 
+    my $txn       = $self->db->txn_scope_guard;
     my $soa_rs    = $self->db->resultset('Soa');
+
+
+    my $dst_rs = $soa_rs->search( { origin => $dst_domain } );
+    if ($dst_rs->count) {
+      croak "*** error already $dst_domain is exist";
+
+    }
+
     my ($src_soa) = $soa_rs->search( { origin => $src_domain } );
 
     #*************************** 4. row ***************************
@@ -137,7 +147,8 @@ package MyDNS::API 0.05 {
 
     }
 
-    $self->regist({ soa => \%soa_param });
+    $self->regist({ soa => \%soa_param })
+      or $error = 1;
 
     my ($dst_soa) = $soa_rs->search({ origin => $dst_domain });
 
@@ -153,8 +164,6 @@ package MyDNS::API 0.05 {
     my $rr_rs = $self->db->resultset('Rr');
 
     my (@src_rres) = $rr_rs->search({ zone => $src_soa->id });
-
-    warn @src_rres ."\n";
 
     no strict 'refs';
     for my $src_rr ( @src_rres ) {
@@ -174,9 +183,21 @@ package MyDNS::API 0.05 {
 
       );
 
-      $self->regist({ rr => \%rr_param });
+      $self->regist({ rr => \%rr_param })
+        or $error = 1;
 
     }
+
+    if (! $error) {
+      $txn->commit;
+      return 1;
+
+    } else {
+      return 0;
+
+    }
+
+
 
   }
 
