@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Mojolicious::Lite;
 use YAML;
+use JSON;
 use MyDNS::API;
 
 our $yaml_file = exists $ENV{MYDNS_API_CONFIG}
@@ -10,7 +11,7 @@ our $yaml_file = exists $ENV{MYDNS_API_CONFIG}
                : q{config.yaml};
 
 
-helper model => sub {
+helper mydns => sub {
   my $self   = shift;
   my $domain = $self->param('domain');
 
@@ -26,6 +27,8 @@ helper model => sub {
 };
 
 
+app->renderer->default_format('json');
+
 under sub {
   return 1;
 
@@ -36,7 +39,26 @@ get '/domain' => sub {
 
 };
 
-post '/domain/(#domain)' => sub {
+post '/clone/(#src_domain)/to/(#domain)' => sub {
+  my $self = shift;
+
+  my $body   = $self->req->body;
+  my $params = decode_json $body;
+  my $mydns  = $self->mydns;
+
+  my $src_domain = $self->param('src_domain');
+  my $result     = $mydns->zone_clone( $src_domain, { ip => $params->{ip} } );
+
+  my $response = +{ result => 0 };
+  if ($result) {
+    $response->{result} = 1;
+  }
+
+  $self->render_json( $response );
+
+};
+
+post '/send_notify/(#domain)' => sub {
   my $self = shift;
 
 };
@@ -59,5 +81,6 @@ any '*' => sub {
 app->start;
 
 
-
-
+__DATA__
+@@ exception.json.ep
+{"result":0,"message":"raise exception <%= $exception %>"}
