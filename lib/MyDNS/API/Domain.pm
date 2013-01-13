@@ -173,6 +173,11 @@ package MyDNS::API::Domain 0.01 {
 
     my $id = $self->get_domain_id( $self->domain );
 
+    if (! $id) {
+      croak "*** domain not found";
+
+    }
+
     my @infos = $rr_rs->search({ zone => $id });
 
     my $domain = $self->domain;
@@ -180,7 +185,6 @@ package MyDNS::API::Domain 0.01 {
     my @zone_infos;
     for my $info ( @infos ) {
       my $zone_info = +{ $info->get_columns };
-      warn Dumper $zone_info;
 
       if (! $zone_info->{name}) {
         $zone_info->{name} = $domain;
