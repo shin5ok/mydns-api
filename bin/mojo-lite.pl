@@ -62,11 +62,14 @@ get '/domain' => sub {
     $query = +{ type => uc $key, data => $value };
   }
 
-  my $mydns_domain   = $self->mydns;
-  my @domains = $mydns_domain->search( $query );
+  my $mydns   = $self->mydns;
+  my @domains = $mydns->domain_search( $query );
 
-  my $response = { result => 1, domain => \@domains };
-  $self->render_json( $response );
+  my $r = $self->r;
+  $r->result(1);
+  $r->data( \@domains );
+
+  $self->render_json( $r->run );
 
 };
 
@@ -74,12 +77,21 @@ get '/domain' => sub {
 get '/domain/(#domain)' => sub {
   my $self = shift;
 
-  my $mydns_domain  = $self->mydns;
+  my $mydns_domain  = $self->mydns_domain;
   my $domain = $self->param('domain');
-  my $info   = $mydns_domain->zone_info( $domain );
 
-  my $response = { result => 1, info => $info };
-  $self->render_json( $response );
+  my $r = $self->r;
+
+  local $@;
+  eval {
+    my $info   = $mydns_domain->zone_info;
+
+    $r->result(1);
+    $r->data( $info );
+  };
+  warn $@ if $@;
+
+  $self->render_json( $r->run );
 
 };
 
@@ -88,7 +100,7 @@ post '/clone/(#src_domain)/to/(#domain)' => sub {
 
   my $body   = $self->req->body;
   my $params = decode_json $body;
-  my $mydns_domain  = $self->mydns;
+  my $mydns_domain  = $self->mydns_domain;
   my $r      = $self->r;
 
   my $src_domain = $self->param('src_domain');
@@ -119,8 +131,6 @@ any '*' => sub {
   my $self = shift;
 
 };
-
-app->start;
 
 
 
@@ -157,6 +167,8 @@ package Run 0.01 {
   
   }
 };
+
+app->start;
 
 
 __DATA__
