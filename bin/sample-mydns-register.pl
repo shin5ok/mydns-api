@@ -6,7 +6,7 @@ use URI;
 use Data::Dumper;
 use JSON;
 use Carp;
-use MyDNS::API;
+use MyDNS::API::Domain;
 
 my $domain   = shift;
 my @vlan_ids = @ARGV;
@@ -18,7 +18,7 @@ my $api_base_uri = $ENV{MURAKUMO_API_URI};
 my $db_user      = $ENV{MYSQLD_USER};
 my $db_password  = $ENV{MYSQLD_PASSWORD};
 
-my $api = MyDNS::API->new({
+my $api = MyDNS::API::Domain->new({
                             domain      => $domain,
                             dsn         => 'dbi:mysql:database=mydns', 
                             db_user     => $db_user, 
