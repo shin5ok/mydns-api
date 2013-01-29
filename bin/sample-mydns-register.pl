@@ -47,6 +47,11 @@ my $ua = LWP::UserAgent->new;
       $ip eq '1' and next;
   
       my $data = _get_data ( $ip->{used} );
+
+      if ($ip->{ip} ne $data->{interfaces}->[0]->{ip}->{ip}) {
+        next;
+
+      }
   
       local $@;
       eval {
@@ -56,7 +61,7 @@ my $ua = LWP::UserAgent->new;
               data => $ip->{ip},
               name => $data->{name},
               type => q{A},
-  
+
             },
           }
         );
