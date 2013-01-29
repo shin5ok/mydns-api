@@ -84,7 +84,7 @@ get '/domain/(#domain)' => sub {
 
   local $@;
   eval {
-    my $info   = $mydns_domain->zone_info;
+    my $info = $mydns_domain->zone_info;
 
     $r->result(1);
     $r->data( $info );
@@ -98,13 +98,22 @@ get '/domain/(#domain)' => sub {
 post '/clone/(#src_domain)/to/(#domain)' => sub {
   my $self = shift;
 
-  my $body   = $self->req->body;
-  my $params = decode_json $body;
+  my $body          = $self->req->body;
+  my $params        = decode_json $body;
   my $mydns_domain  = $self->mydns_domain;
-  my $r      = $self->r;
+  my $r             = $self->r;
 
   my $src_domain = $self->param('src_domain');
-  my $result     = $mydns_domain->zone_clone( $src_domain, { ip => $params->{ip} } );
+
+  my $ip = exists $params->{ip}
+         ? $params->{ip}
+         : "";
+
+  my $result     = $mydns_domain->zone_clone(
+                                               $src_domain, {
+                                                              ip => $ip,
+                                                            }
+                                            );
 
   $r->result(1);
 

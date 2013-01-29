@@ -195,6 +195,7 @@ package MyDNS::API::Domain 0.01 {
       push @zone_infos, $zone_info;
     }
 
+    return undef if @zone_infos == 0;
     return \@zone_infos;
 
   }
