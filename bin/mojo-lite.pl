@@ -51,6 +51,7 @@ under sub {
 };
 
 
+# ¾ò·ï¤Ë°ìÃ×¤¹¤ë¥É¥á¥¤¥ó¤òÃµ¤¹
 get '/domain' => sub {
   my $self = shift;
 
@@ -77,8 +78,9 @@ get '/domain' => sub {
 get '/domain/(#domain)' => sub {
   my $self = shift;
 
-  my $mydns_domain  = $self->mydns_domain;
-  my $domain = $self->param('domain');
+  my $mydns_domain = $self->mydns_domain;
+  my $domain       = $self->param('domain');
+  my $no_zone_data = $self->param('no_zone_data');
 
   my $r = $self->r;
 
@@ -86,8 +88,13 @@ get '/domain/(#domain)' => sub {
   eval {
     my $info = $mydns_domain->zone_info;
 
+  warn Data::Dumper::Dumper $info;
+
     $r->result(1);
-    $r->data( $info );
+    if (! $no_zone_data) {
+      $r->data( $info );
+    }
+
   };
   warn $@ if $@;
 
@@ -109,13 +116,36 @@ post '/clone/(#src_domain)/to/(#domain)' => sub {
          ? $params->{ip}
          : "";
 
-  my $result     = $mydns_domain->zone_clone(
-                                               $src_domain, {
-                                                              ip => $ip,
-                                                            }
-                                            );
+  my $result = $mydns_domain->zone_clone(
+                                           $src_domain, {
+                                                          ip => $ip,
+                                                        }
+                                        );
 
   $r->result(1);
+
+  $self->render_json( $r->run );
+
+};
+
+post '/domain/(#domain)' => sub {
+  my $self = shift;
+
+  my $body          = $self->req->body;
+  my $params        = decode_json $body;
+
+  no strict 'refs';
+  my $result;
+  if ($params->{mode} eq 'remove') {
+    my $mydns_domain = $self->mydns_domain;
+    $result = $mydns_domain->zone_remove;
+  }
+
+  my $r = $self->r;
+
+  if ($result) {
+    $r->result(1);
+  }
 
   $self->render_json( $r->run );
 

@@ -15,7 +15,7 @@ package MyDNS::API::Domain 0.01 {
 
     my $domain = delete $params->{domain};
 
-    $domain
+    defined $domain
       or croak "*** domain name is not found";
 
     my $obj = $class->SUPER::new( $params );
@@ -82,6 +82,10 @@ package MyDNS::API::Domain 0.01 {
     }
 
     my ($src_soa) = $soa_rs->search( { origin => $src_domain } );
+
+    if (not defined $src_soa) {
+      croak "*** $src_domain for source is not found";
+    }
 
     #*************************** 4. row ***************************
     #         id: 4
@@ -171,7 +175,7 @@ package MyDNS::API::Domain 0.01 {
     my $rr_rs  = $self->db->resultset('Rr');
     my $soa_rs = $self->db->resultset('Soa');
 
-    my $id = $self->get_domain_id( $self->domain );
+    my $id = $self->get_domain_id;
 
     if (! $id) {
       croak "*** domain not found";
@@ -227,7 +231,7 @@ package MyDNS::API::Domain 0.01 {
         my $name  = $rr->{name};
         my $type  = $rr->{type};
 
-        my $zone_id = $self->get_domain_id( domain => $domain );
+        my $zone_id = $self->get_domain_id;
 
         $args->{rr}->{zone} = $zone_id;
 
@@ -247,6 +251,23 @@ package MyDNS::API::Domain 0.01 {
 
   }
 
+
+  sub zone_remove {
+    my ($self) = @_;
+
+    my $txn  = $self->db->txn_scope_guard;
+
+    my $domain_id = $self->get_domain_id;
+
+    my $rr_rs  = $self->db->resultset('Rr');
+    my $soa_rs = $self->db->resultset('Soa');
+
+    $rr_rs->search ({ zone => $domain_id })->delete;
+    $soa_rs->search({ id   => $domain_id })->delete;
+
+    $txn->commit;
+
+  }
 
   sub serial_up {
     my $self = shift;
@@ -268,7 +289,7 @@ package MyDNS::API::Domain 0.01 {
     my $nameservers = qq{};
 
     my $rr_rs   = $self->db->resultset('Rr');
-    my $zone_id = $self->get_domain_id( $domain );
+    my $zone_id = $self->get_domain_id;
 
     my @results = $rr_rs->search({ type => 'NS', zone => $zone_id });
     for my $result ( @results ) {
