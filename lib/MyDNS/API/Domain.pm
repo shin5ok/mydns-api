@@ -142,12 +142,15 @@ package MyDNS::API::Domain 0.01 {
 
       $data =~ s/(\.?)${src_domain}(\.?)$/${1}${dst_domain}${2}/;
 
+      my $name = $src_rr->name eq $src_domain
+               ? $dst_domain
+               : $src_rr->name;
+
       my %rr_param = (
         zone => $dst_soa->id,
-        name => $src_rr->name,
+        name => $name,
         data => $data || $src_rr->data,
         aux  => $src_rr->aux,
-        # ttl  =>
         type => $src_rr->type,
 
       );
@@ -264,6 +267,10 @@ package MyDNS::API::Domain 0.01 {
 
     $rr_rs->search ({ zone => $domain_id })->delete;
     $soa_rs->search({ id   => $domain_id })->delete;
+
+    if ($self->get_domain_id) {
+      croak "*** domain remove failure";
+    }
 
     $txn->commit;
 
