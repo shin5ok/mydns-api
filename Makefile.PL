@@ -5,6 +5,7 @@ WriteMakefile(
     'PREREQ_PM' => {
 	Test::More => 0.32,
   Class::Accessor::Lite => 0.05,
+  DBD::mysql => 4.022,
   DBIx::Class => 0.08204,
   DBIx::Class::Schema::Loader => 0.07033,
   JSON => 2.53,
