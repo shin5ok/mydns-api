@@ -212,4 +212,5 @@ app->start;
 
 __DATA__
 @@ exception.json.ep
-{"result":0,"message":"raise exception <%= $exception %>"}
+% use Mojo::JSON;
+% return Mojo::JSON->new->encode( { result => 0, message => $exception } );
