@@ -1,0 +1,52 @@
+{
+   "abstract" : "unknown",
+   "author" : [
+      "unknown"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "ExtUtils::MakeMaker version 6.64, CPAN::Meta::Converter version 2.120630",
+   "license" : [
+      "unknown"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "MyDNS-API",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "inc"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Class::Accessor::Lite" : "0.05",
+            "DBD::mysql" : "4.022",
+            "DBIx::Class" : "0.08204",
+            "DBIx::Class::Schema::Loader" : "0.07033",
+            "JSON" : "2.53",
+            "LWP::UserAgent" : "6.04",
+            "Mojolicious" : "3.64",
+            "Smart::Args" : "0.1",
+            "Starman" : "0.3001",
+            "Test::More" : "0.32",
+            "URI" : "1.6",
+            "YAML" : "0.81"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "version" : ""
+}

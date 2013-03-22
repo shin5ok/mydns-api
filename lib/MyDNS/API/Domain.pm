@@ -292,7 +292,7 @@ package MyDNS::API::Domain 0.01 {
 
     my $domain = $self->domain;
 
-    # NS¥ì¥³¡¼¥É ¤ò¼ı½¸
+    # NSãƒ¬ã‚³ãƒ¼ãƒ‰ ã‚’åé›†
     my $nameservers = qq{};
 
     my $rr_rs   = $self->db->resultset('Rr');
