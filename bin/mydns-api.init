@@ -1,0 +1,33 @@
+#!/usr/bin/env perl
+# chkconfig: 2345 99 10
+# description: mydns api
+
+use strict;
+use warnings;
+use Carp;
+use File::Basename;
+use POSIX;
+
+my $progname = "mydns-api";
+local $ENV{PATH}     = q{/home/smc/bin:} . $ENV{PATH};
+
+my $daemon_and_args = qq(hypnotoad /home/smc/bin/mojo-lite.pl);
+
+my $args = shift || q{start};
+
+if ($args eq 'stop') {
+  $daemon_and_args .= " -s";
+}
+
+my $r = system $daemon_and_args;
+
+my $message = qq{};
+if ($r == 0) {
+  $message = "$progname is $args ok";
+} else {
+  $message = "$progname is $args failure...";
+}
+
+$message .= "($daemon_and_args)";
+
+print $message, "\n";

@@ -10,7 +10,7 @@ my $ip     = shift;
 my $v = MyDNS::API::Domain->new( {
                            domain      => $domain,
                            dsn         => "dbi:mysql:mydns", 
-                           db_user     => "root", 
+                           db_user     => $ENV{MYSQLD_USER}, 
                            db_password => $ENV{MYSQLD_PASSWORD},
                            auto_notify => 1,
                           });

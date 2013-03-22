@@ -1,9 +1,11 @@
-#!/usr/bin/env perl
+#!/home/smc/bin/perl
 use strict;
 use warnings;
 use Mojolicious::Lite;
 use YAML;
 use JSON;
+use FindBin;
+use lib qq{$FindBin::Bin/../lib};
 use MyDNS::API;
 use MyDNS::API::Domain;
 
@@ -44,6 +46,15 @@ helper mydns => sub {
 
 
 app->renderer->default_format('json');
+app->config({
+              hypnotoad => {
+                listen             => [ 'https://*:63001' ],
+                workers            => 8,
+                accepts            => 64,
+                graceful_timeout   => 30,
+                inactivity_timeout => 120,
+              },
+            });
 
 under sub {
   return 1;
@@ -51,7 +62,7 @@ under sub {
 };
 
 
-# ¾ò·ï¤Ë°ìÃ×¤¹¤ë¥É¥á¥¤¥ó¤òÃµ¤¹
+# æ¡ä»¶ã«ä¸€è‡´ã™ã‚‹ãƒ‰ãƒ¡ã‚¤ãƒ³ã‚’æŽ¢ã™
 get '/domain' => sub {
   my $self = shift;
 
