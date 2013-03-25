@@ -228,7 +228,7 @@ package MyDNS::API::Domain 0.01 {
 
     if (exists $args->{rr}) {
       my $rr = $args->{rr};
-  
+
       if ($rr->{type}) {
 
         my $name  = $rr->{name};
@@ -315,7 +315,7 @@ package MyDNS::API::Domain 0.01 {
     my $r;
     if ($nameservers) {
       my $command = sprintf "zonenotify %s %s", $domain, $nameservers;
-      $r = run(command => $command);
+      $r = run(command => $command, { timeout => 10 });
 
       exists $ENV{DEBUG} and warn $command;
 
@@ -323,6 +323,27 @@ package MyDNS::API::Domain 0.01 {
 
     }
 
+
+  }
+
+  sub get_zone_bind_format {
+    my ($self) = @_;
+
+    my $command = sprintf "mydnsexport -D %s -b -u %s -p%s %s",
+                          $self->db_name || q{mydns},
+                          $self->db_user,
+                          $self->db_password,
+                          $self->domain;
+
+    warn "exec : $command";
+
+    my @results = run( command => $command );
+    if (! $results[0]) {
+      croak "*** error mydnsexport $results[2]->[0]";
+
+    }
+
+    return $results[2];
 
   }
 
