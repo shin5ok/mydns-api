@@ -21,7 +21,7 @@ helper mydns_domain => sub {
 
   my $yaml = YAML::LoadFile($yaml_file);
   my $args = {
-    domain      => $domain, 
+    domain      => $domain,
     dsn         => $yaml->{dsn},
     db_user     => $yaml->{db_user},
     db_password => $yaml->{db_password},
@@ -92,18 +92,26 @@ get '/domain/(#domain)' => sub {
   my $mydns_domain = $self->mydns_domain;
   my $domain       = $self->param('domain');
   my $no_zone_data = $self->param('no_zone_data');
+  my $format       = $self->param('format');
 
   my $r = $self->r;
 
   local $@;
   eval {
-    my $info = $mydns_domain->zone_info;
 
-  warn Data::Dumper::Dumper $info;
+    if ($format ne 'bind') {
+      my $info = $mydns_domain->zone_info;
 
-    $r->result(1);
-    if (! $no_zone_data) {
-      $r->data( $info );
+      $r->result(1);
+      if (! $no_zone_data) {
+        $r->data( $info );
+      }
+
+    } else {
+      my $zone_data = $mydns_domain->get_zone_bind_format;
+      $r->result(1);
+      $r->data( $zone_data );
+
     }
 
   };
@@ -112,6 +120,7 @@ get '/domain/(#domain)' => sub {
   $self->render_json( $r->run );
 
 };
+
 
 post '/clone/(#src_domain)/to/(#domain)' => sub {
   my $self = shift;
@@ -198,7 +207,7 @@ package Run 0.01 {
        message => '',
        data    => '',
        app     => $app,
-     
+
      };
    }
 
@@ -209,12 +218,12 @@ package Run 0.01 {
 
     $result_hash_ref->{result}  = $self->result;
     $result_hash_ref->{message} = $self->message;
-  
+
     $hash_ref and $self->data( $hash_ref );
     $result_hash_ref->{data} = $self->data || qq{},
 
     return $result_hash_ref;
-  
+
   }
 };
 

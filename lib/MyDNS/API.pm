@@ -5,7 +5,7 @@ package MyDNS::API 0.05 {
   use Carp;
   use Data::Dumper;
   use Class::Accessor::Lite (
-    rw => [qw( db auto_notify changed )],
+    rw => [qw( db auto_notify changed db_user db_password dsn db_name )],
   );
   use IPC::Cmd qw(run);
   use POSIX q(strftime);
@@ -29,11 +29,19 @@ package MyDNS::API 0.05 {
     my @args = ($dsn);
     push @args, $db_user     if defined $db_user;
     push @args, $db_password if defined $db_password;
-         
+
     my $obj = bless {
                 db          => $class->connect( @args ),
                 changed     => 0,
               }, $class;
+
+    if ($dsn =~ /^dbi:mysql:([^;:]+)/) {
+      $obj->db_name( $1 );
+    }
+
+    $obj->db_user    ( $db_user     || q{} );
+    $obj->db_password( $db_password || q{} );
+    $obj->dsn( $dsn );
 
     return $obj;
 
@@ -41,7 +49,7 @@ package MyDNS::API 0.05 {
 
 
   sub domain_search {
-    my $self  = shift;
+    my $self     = shift;
     my $rr_query = shift || qq{};
 
     my $rr_rs     = $self->db->resultset('Rr');
