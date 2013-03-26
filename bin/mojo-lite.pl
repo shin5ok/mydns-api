@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 use Mojolicious::Lite;
+use Carp;
 use YAML;
 use JSON;
 use FindBin;
@@ -12,6 +13,8 @@ use MyDNS::API::Domain;
 our $yaml_file = exists $ENV{MYDNS_API_CONFIG}
                ? $ENV{MYDNS_API_CONFIG}
                : q{config.yaml};
+my $config = YAML::LoadFile($yaml_file);
+my $debug = exists $config->{debug} ? $config->{debug} : 0;
 
 helper r => sub { Run->new };
 
@@ -19,12 +22,11 @@ helper mydns_domain => sub {
   my $self   = shift;
   my $domain = $self->param('domain');
 
-  my $yaml = YAML::LoadFile($yaml_file);
   my $args = {
     domain      => $domain,
-    dsn         => $yaml->{dsn},
-    db_user     => $yaml->{db_user},
-    db_password => $yaml->{db_password},
+    dsn         => $config->{dsn},
+    db_user     => $config->{db_user},
+    db_password => $config->{db_password},
   };
   my $mydns_domain = MyDNS::API::Domain->new($args);
   return $mydns_domain;
@@ -33,11 +35,10 @@ helper mydns_domain => sub {
 helper mydns => sub {
   my $self   = shift;
 
-  my $yaml = YAML::LoadFile($yaml_file);
   my $args = {
-    dsn         => $yaml->{dsn},
-    db_user     => $yaml->{db_user},
-    db_password => $yaml->{db_password},
+    dsn         => $config->{dsn},
+    db_user     => $config->{db_user},
+    db_password => $config->{db_password},
   };
   my $mydns = MyDNS::API->new($args);
   return $mydns;
@@ -57,6 +58,22 @@ app->config({
             });
 
 under sub {
+  my ($self) = @_;
+
+  if (exists $config->{allow_access}) {
+    my $allow_ref = $config->{allow_access};
+    my $address = $self->tx->remote_address;
+
+    require Net::CIDR;
+    if (Net::CIDR::cidrlookup($address, @$allow_ref)) {
+      warn "$address is access ok" if $debug;
+      return 1;
+    } else {
+      croak "*** disallow from $address";
+    }
+
+  }
+
   return 1;
 
 };
