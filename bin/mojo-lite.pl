@@ -15,7 +15,11 @@ our $yaml_file = exists $ENV{MYDNS_API_CONFIG}
                ? $ENV{MYDNS_API_CONFIG}
                : q{config.yaml};
 my $config = YAML::LoadFile($yaml_file);
-my $debug = exists $config->{debug} ? $config->{debug} : 0;
+my $debug = exists $ENV{DEBUG}
+          ? $ENV{DEBUG}
+          : exists $config->{debug}
+          ? $config->{debug}
+          : 0;
 
 helper r => sub { Run->new };
 
@@ -58,12 +62,15 @@ app->config({
               },
             });
 
-if (not $debug) {
+if (! $debug) {
   app->log( MojoX::Log::Log4perl->new( $config->{log4perl_conf} ));
 }
 
+
 under sub {
   my ($self) = @_;
+
+  $self->app->log->info( "request url: " . $self->tx->req->url );
 
   if (exists $config->{allow_access}) {
     my $allow_ref = $config->{allow_access};
@@ -71,7 +78,6 @@ under sub {
 
     require Net::CIDR;
     if (Net::CIDR::cidrlookup($address, @$allow_ref)) {
-      warn "$address is access ok" if $debug;
       $self->app->log->info("$address is access ok");
       return 1;
     } else {
@@ -97,12 +103,12 @@ get '/domain' => sub {
     $query = +{ type => uc $key, data => $value };
   }
 
-  my $mydns   = $self->mydns;
-  my @domains = $mydns->domain_search( $query );
+  my $mydns       = $self->mydns;
+  my $domains_ref = $mydns->domain_search( $query );
 
   my $r = $self->r;
   $r->result(1);
-  $r->data( \@domains );
+  $r->data( $domains_ref );
 
   $self->render_json( $r->run );
 
@@ -159,6 +165,11 @@ post '/clone/(#src_domain)/to/(#domain)' => sub {
          ? $params->{ip}
          : "";
 
+  my $log = sprintf "try clone %s from %s",
+                    $self->param('domain'),
+                    $src_domain;
+  $self->app->log->info( $log );
+
   my $result = $mydns_domain->zone_clone(
                                            $src_domain, {
                                                           ip => $ip,
@@ -177,6 +188,11 @@ post '/domain/(#domain)' => sub {
   my $body          = $self->req->body;
   my $params        = decode_json $body;
 
+  my $log = sprintf "try domain %s %s",
+                    $params->{mode},
+                    $self->param('domain');
+  $self->app->log->info( $log );
+
   no strict 'refs';
   my $result;
   if ($params->{mode} eq 'remove') {
@@ -194,27 +210,25 @@ post '/domain/(#domain)' => sub {
 
 };
 
-post '/send_notify/(#domain)' => sub {
-  my $self = shift;
-
-};
-
-put '/domain/(#domain)' => sub {
-  my $self = shift;
-
-};
-
-del '/domain/(#domain)' => sub {
-  my $self = shift;
-
-};
-
-any '*' => sub {
-  my $self = shift;
-
-};
-
-
+# post '/send_notify/(#domain)' => sub {
+#   my $self = shift;
+#
+# };
+#
+# put '/domain/(#domain)' => sub {
+#   my $self = shift;
+#
+# };
+#
+# del '/domain/(#domain)' => sub {
+#   my $self = shift;
+#
+# };
+#
+# any '*' => sub {
+#   my $self = shift;
+#
+# };
 
 package Run 0.01 {
   use strict;
