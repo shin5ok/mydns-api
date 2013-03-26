@@ -4,6 +4,7 @@ use warnings;
 use Mojolicious::Lite;
 use Carp;
 use YAML;
+use MojoX::Log::Log4perl;
 use JSON;
 use FindBin;
 use lib qq{$FindBin::Bin/../lib};
@@ -57,6 +58,10 @@ app->config({
               },
             });
 
+if (not $debug) {
+  app->log( MojoX::Log::Log4perl->new( $config->{log4perl_conf} ));
+}
+
 under sub {
   my ($self) = @_;
 
@@ -67,6 +72,7 @@ under sub {
     require Net::CIDR;
     if (Net::CIDR::cidrlookup($address, @$allow_ref)) {
       warn "$address is access ok" if $debug;
+      $self->app->log->info("$address is access ok");
       return 1;
     } else {
       croak "*** disallow from $address";
@@ -109,7 +115,7 @@ get '/domain/(#domain)' => sub {
   my $mydns_domain = $self->mydns_domain;
   my $domain       = $self->param('domain');
   my $no_zone_data = $self->param('no_zone_data');
-  my $format       = $self->param('format');
+  my $format       = $self->param('format') || qq{};
 
   my $r = $self->r;
 

@@ -4,7 +4,7 @@ use warnings;
 package MyDNS::API::Domain 0.01 {
   use Carp;
   use Data::Dumper;
-  use IPC::Cmd qw(run);
+  use IPC::Cmd qw(run run_forked);
   use POSIX q(strftime);
   use Smart::Args;
 
@@ -337,13 +337,13 @@ package MyDNS::API::Domain 0.01 {
 
     warn "exec : $command";
 
-    my @results = run( command => $command );
-    if (! $results[0]) {
-      croak "*** error mydnsexport $results[2]->[0]";
+    my $r = run_forked( $command, { timeout => 30 });
+    if ($r->{exit_code} != 0) {
+      croak "*** error mydnsexport $r->{stderr}";
 
     }
 
-    return $results[2];
+    return $r->{stdout};
 
   }
 

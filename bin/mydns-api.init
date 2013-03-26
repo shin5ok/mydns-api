@@ -19,7 +19,7 @@ if ($args eq 'stop') {
   $daemon_and_args .= " -s";
 }
 
-local $ENV{MYDNS_API_CONFIG} = q{/root/config.yaml};
+local $ENV{MYDNS_API_CONFIG} = q{/root/mydns-api-config.yaml};
 my $r = system $daemon_and_args;
 
 my $message = qq{};
