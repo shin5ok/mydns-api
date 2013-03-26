@@ -342,9 +342,10 @@ package MyDNS::API::Domain 0.01 {
       croak "*** error mydnsexport $r->{stderr}";
 
     }
+    my $data = $r->{stdout};
+    $data =~ s/^;[^\n]*\n//gms;
 
-    return $r->{stdout};
-
+    return $data;
   }
 
 
