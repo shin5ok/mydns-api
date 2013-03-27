@@ -18,6 +18,9 @@ my $args = shift || q{start};
 if ($args eq 'stop') {
   $daemon_and_args .= " -s";
 }
+elsif ($args eq 'front-start') {
+  $daemon_and_args .= " -f";
+}
 
 local $ENV{MYDNS_API_CONFIG} = q{/root/mydns-api-config.yaml};
 my $r = system $daemon_and_args;
@@ -32,3 +35,4 @@ if ($r == 0) {
 $message .= "($daemon_and_args)";
 
 print $message, "\n";
+
