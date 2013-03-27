@@ -152,6 +152,7 @@ package MyDNS::API::Domain 0.01 {
         data => $data || $src_rr->data,
         aux  => $src_rr->aux,
         type => $src_rr->type,
+        ttl  => $src_rr->ttl,
 
       );
 

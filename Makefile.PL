@@ -16,10 +16,10 @@ WriteMakefile(
        Starman => 0.3001,
        YAML => 0.81,
        IO::Socket::SSL => 1.84,
-       Log::Dispatch::Syslog,
-       MojoX::Log::Log4perl,
+       Net::CIDR => 0.17,
+       Log::Dispatch::Syslog => 2.35,
+       MojoX::Log::Log4perl => 0.06,
     },
 );
-
 
 
