@@ -3,8 +3,9 @@ use strict;
 use warnings;
 use Mojolicious::Lite;
 use Carp;
-use YAML;
 use MojoX::Log::Log4perl;
+use Data::Dumper;
+use YAML;
 use JSON;
 use FindBin;
 use lib qq{$FindBin::Bin/../lib};
@@ -102,6 +103,7 @@ get '/domain' => sub {
   if ($key and $value) {
     $query = +{ type => uc $key, data => $value };
   }
+  warn Dumper $query if $debug;
 
   my $mydns       = $self->mydns;
   my $domains_ref = $mydns->domain_search( $query );

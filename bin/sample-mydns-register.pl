@@ -34,25 +34,24 @@ my $ua = LWP::UserAgent->new;
   );
 
   my $response = $ua->get( $uri );
-  
+
   my $json = $response->content;
   my $hash_ref = decode_json $json;
-  
+
   my $ip_data = $hash_ref->{data};
-  warn Dumper $ip_data;
-  
+
   for my $vlan_id ( @vlan_ids ) {
     for my $ip (@{$ip_data->{$vlan_id}}) {
       $ip->{used} or next;
       $ip eq '1' and next;
-  
+
       my $data = _get_data ( $ip->{used} );
 
       if ($ip->{ip} ne $data->{interfaces}->[0]->{ip}->{ip}) {
         next;
 
       }
-  
+
       local $@;
       eval {
         $api->regist(
@@ -67,7 +66,7 @@ my $ua = LWP::UserAgent->new;
         );
       };
       warn $@ if $@;
-  
+ 
     }
   }
 }
@@ -79,10 +78,10 @@ my $ua = LWP::UserAgent->new;
   );
 
   my $response = $ua->get( $uri );
-  
+
   my $json = $response->content;
   my $hash_ref = decode_json $json;
-  
+
   my $data = $hash_ref->{data};
 
   for my $x ( @$data ) {
@@ -102,7 +101,7 @@ my $ua = LWP::UserAgent->new;
     warn $@ if $@;
 
   }
-  
+
 }
 
 
@@ -116,7 +115,7 @@ sub _get_data {
 
   my $ua = LWP::UserAgent->new;
   my $response = $ua->get( $uri );
-  
+
   my $json = $response->content;
   my $hash_ref = decode_json $json;
   warn Dumper $hash_ref if exists $ENV{DEBUG};

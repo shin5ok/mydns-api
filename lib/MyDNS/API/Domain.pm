@@ -18,11 +18,14 @@ package MyDNS::API::Domain 0.01 {
     defined $domain
       or croak "*** domain name is not found";
 
+    no strict 'refs';
+    my $auto_notify = delete $params->{auto_notify} // 0;
+
     my $obj = $class->SUPER::new( $params );
 
     $obj->domain( $domain );
 
-    if ($params->{auto_notify}) {
+    if ($auto_notify) {
       $obj->{auto_notify} = $params->{auto_notify};
 
     }
@@ -221,11 +224,19 @@ package MyDNS::API::Domain 0.01 {
 
       $soa->{origin} = $domain;
 
-      $soa_rs->update_or_create($args->{soa}, { origin => $domain });
+      my $find_args;
+      %$find_args = %{$soa};
+      delete $find_args->{data};
+
+      $soa_rs->search($find_args)
+            ->delete;
+
+      $soa_rs->update_or_create($soa);
 
       $self->changed(1);
 
     }
+
 
     if (exists $args->{rr}) {
       my $rr = $args->{rr};
@@ -237,10 +248,18 @@ package MyDNS::API::Domain 0.01 {
 
         my $zone_id = $self->get_domain_id;
 
-        $args->{rr}->{zone} = $zone_id;
+        $rr->{zone} = $zone_id;
 
         my $rr_rs = $self->db->resultset('Rr');
-        $rr_rs->update_or_create($args->{rr}, { name => $name, type => $type, zone => $zone_id });
+
+        my $find_args;
+        %$find_args = %{$rr};
+        delete $find_args->{data};
+
+        $rr_rs->search($find_args)
+              ->delete;
+
+        $rr_rs->update_or_create($rr);
 
         $self->changed(1);
 
