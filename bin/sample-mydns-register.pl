@@ -13,15 +13,16 @@ my @vlan_ids = @ARGV;
 $domain       or croak "*** domain is empty";
 @vlan_ids > 0 or croak "*** no vlan id";
 
-my $api_key      = $ENV{MURAKUMO_API_KEY};
+my $admin_key    = $ENV{MURAKUMO_ADMIN_KEY};
 my $api_base_uri = $ENV{MURAKUMO_API_URI};
 my $db_user      = $ENV{MYSQLD_USER};
 my $db_password  = $ENV{MYSQLD_PASSWORD};
+my $debug        = exists $ENV{DEBUG};
 
 my $api = MyDNS::API::Domain->new({
                             domain      => $domain,
-                            dsn         => 'dbi:mysql:database=mydns', 
-                            db_user     => $db_user, 
+                            dsn         => 'dbi:mysql:database=mydns',
+                            db_user     => $db_user,
                             db_password => $db_password,
                           });
 
@@ -30,10 +31,14 @@ my $ua = LWP::UserAgent->new;
 {
   my $uri = URI->new( qq{$api_base_uri/ip/list} );
   $uri->query_form(
-    key => $api_key,
+    admin_key => $admin_key,
   );
 
+  warn $uri if $debug;
+
   my $response = $ua->get( $uri );
+
+  warn $response->content if $debug;
 
   my $json = $response->content;
   my $hash_ref = decode_json $json;
@@ -74,7 +79,7 @@ my $ua = LWP::UserAgent->new;
 {
   my $uri = URI->new( qq{$api_base_uri/node/list} );
   $uri->query_form(
-    key => $api_key,
+    admin_key => $admin_key,
   );
 
   my $response = $ua->get( $uri );
@@ -110,7 +115,7 @@ sub _get_data {
 
   my $uri = URI->new( qq{$api_base_uri/vps/define/info/$uuid} );
   $uri->query_form(
-    key => $api_key,
+    admin_key => $admin_key,
   );
 
   my $ua = LWP::UserAgent->new;
