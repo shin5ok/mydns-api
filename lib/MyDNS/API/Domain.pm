@@ -10,6 +10,8 @@ package MyDNS::API::Domain 0.01 {
 
   use base qw( MyDNS::API );
 
+  my $debug = exists $ENV{DEBUG} ? $ENV{DEBUG} : 0;
+
   sub new {
     my ($class, $params) = @_;
 
@@ -224,12 +226,34 @@ package MyDNS::API::Domain 0.01 {
 
       $soa->{origin} = $domain;
 
+      # +-------------+------------------+------+-----+---------+----------------+
+      # | Field       | Type             | Null | Key | Default | Extra          |
+      # +-------------+------------------+------+-----+---------+----------------+
+      # | id          | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
+      # | origin      | char(255)        | NO   | UNI | NULL    |                |
+      # | ns          | char(255)        | NO   |     | NULL    |                |
+      # | mbox        | char(255)        | NO   |     | NULL    |                |
+      # | serial      | int(10) unsigned | NO   |     | 1       |                |
+      # | refresh     | int(10) unsigned | NO   |     | 28800   |                |
+      # | retry       | int(10) unsigned | NO   |     | 7200    |                |
+      # | expire      | int(10) unsigned | NO   |     | 604800  |                |
+      # | minimum     | int(10) unsigned | NO   |     | 86400   |                |
+      # | ttl         | int(10) unsigned | NO   |     | 86400   |                |
+      # | also_notify | char(255)        | YES  |     | NULL    |                |
+      # +-------------+------------------+------+-----+---------+----------------+
+
       my $find_args;
       %$find_args = %{$soa};
       delete $find_args->{data};
+      delete $find_args->{ttl};
+      delete $find_args->{refresh};
+      delete $find_args->{retry};
+      delete $find_args->{serial};
+      delete $find_args->{minimum};
+      delete $find_args->{expire};
 
       $soa_rs->search($find_args)
-            ->delete;
+             ->delete;
 
       $soa_rs->update_or_create($soa);
 
@@ -255,6 +279,7 @@ package MyDNS::API::Domain 0.01 {
         my $find_args;
         %$find_args = %{$rr};
         delete $find_args->{data};
+        delete $find_args->{ttl};
 
         $rr_rs->search($find_args)
               ->delete;
@@ -269,8 +294,6 @@ package MyDNS::API::Domain 0.01 {
       }
 
     }
-
-    $self->changed and $self->serial_up;
 
   }
 
@@ -337,7 +360,7 @@ package MyDNS::API::Domain 0.01 {
       my $command = sprintf "zonenotify %s %s", $domain, $nameservers;
       $r = run(command => $command, { timeout => 10 });
 
-      exists $ENV{DEBUG} and warn $command;
+      warn $command if $debug;
 
       $r or warn "*** $command is failure";
 
@@ -355,7 +378,7 @@ package MyDNS::API::Domain 0.01 {
                           $self->db_password,
                           $self->domain;
 
-    warn "exec : $command";
+    warn "exec : $command" if $debug;
 
     my $r = run_forked( $command, { timeout => 30 });
     if ($r->{exit_code} != 0) {
@@ -372,10 +395,15 @@ package MyDNS::API::Domain 0.01 {
   sub DESTROY {
     my $self = shift;
 
-    if ($self->auto_notify and $self->changed) {
-      exists $ENV{DEBUG}
-        and warn "send notify auto";
-      $self->send_notify;
+    if ($self->changed) {
+
+      $self->serial_up;
+      $self->changed(0);
+
+      if ($self->auto_notify) {
+        warn "send notify auto" if $debug;
+        $self->send_notify;
+      }
     }
 
   }
