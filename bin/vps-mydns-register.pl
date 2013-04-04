@@ -2,16 +2,15 @@
 use strict;
 use warnings;
 use LWP::UserAgent;
-use Digest::MD5 qw(md5_hex);
-use URI;
-use Data::Dumper;
 use JSON;
 use Array::Diff;
+use Array::Utils qw(unique);
+use URI;
+use Data::Dumper;
+use Digest::MD5 qw(md5_hex);
 use Fcntl qw(:flock);
-use Cache::Memcached::Fast;
 use File::Basename;
 use Carp;
-use Array::Utils qw(unique);
 use MyDNS::API::Domain;
 
 use lib qw( /usr/local/nagios/libexec/modules );
