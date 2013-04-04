@@ -11,7 +11,7 @@ use POSIX;
 my $progname = "mydns-api";
 local $ENV{PATH}     = q{/home/smc/bin:} . $ENV{PATH};
 
-my $daemon_and_args = qq(hypnotoad /home/smc/bin/mojo-lite.pl);
+my $daemon_and_args = qq(hypnotoad /home/smc/mydns-api/bin/mydns-api);
 
 my $args = shift || q{start};
 

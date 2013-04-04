@@ -19,6 +19,8 @@ WriteMakefile(
        Net::CIDR => 0.17,
        Log::Dispatch::Syslog => 2.35,
        MojoX::Log::Log4perl => 0.06,
+       Array::Diff => 0.07,
+       Array::Utils => 0.5,
     },
 );
 

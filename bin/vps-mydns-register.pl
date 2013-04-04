@@ -6,10 +6,12 @@ use Digest::MD5 qw(md5_hex);
 use URI;
 use Data::Dumper;
 use JSON;
+use Array::Diff;
 use Fcntl qw(:flock);
 use Cache::Memcached::Fast;
 use File::Basename;
 use Carp;
+use Array::Utils qw(unique);
 use MyDNS::API::Domain;
 
 use lib qw( /usr/local/nagios/libexec/modules );
@@ -56,6 +58,7 @@ my $api = MyDNS::API::Domain->new({
 
 my $ua = LWP::UserAgent->new;
 
+my @dns_hostnames;
 my $failure;
 VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
@@ -75,24 +78,30 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
   my $json = $response->content;
 
+  my $hash_ref    = decode_json $json;
+  my $ip_data_ref = $hash_ref->{data};
+  my @ip_datas    = @$ip_data_ref;
+
   my $current_md5 = md5_hex $json;
 
-  if (exists $md5_ref->{$vlan_id}) {
-    $md5_ref->{$vlan_id} eq $current_md5
+  if (exists $md5_ref->{vlan}->{$vlan_id}) {
+    $md5_ref->{vlan}->{$vlan_id} eq $current_md5
       and next VLAN_ID;
   }
 
-  $md5_ref->{$vlan_id} = $current_md5;
-
-  my $hash_ref = decode_json $json;
-
-  my $ip_data_ref = $hash_ref->{data};
-
-  my @ip_datas = @$ip_data_ref;
+  $md5_ref->{vlan}->{$vlan_id} = $current_md5;
 
   if (@ip_datas == 0) {
     next VLAN_ID;
   }
+
+  push @dns_hostnames,
+       (
+         map  { $_->{name} }
+         grep { $_->{tag} eq $managed_tag }
+         grep { defined $_->{name} and defined $_->{tag} }
+         @ip_datas
+       );
 
   for my $r ( @ip_datas ) {
     $r->{tag} //= qq{};
@@ -104,23 +113,40 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
     eval {
       $api->regist(
         +{
-          rr => +{
-            data => $r->{ip},
-            name => $r->{name},
-            type => q{A},
-            ttl  => $ttl,
-          },
+           rr => +{
+             data => $r->{ip},
+             name => $r->{name},
+             type => q{A},
+             ttl  => $ttl,
+           },
         }
       );
     };
     if ($@) {
       HG::Escalation->send_my_nrpe({ target => 'MYDNS_ERROR', log => $@, exit_status => 2, });
       $failure = 1;
+      # エラーが出たら、データを初期化し、次回に更新を強制的に実行させる
+      $md5_ref = {};
     }
   }
 
 }
 
+# お掃除
+if (exists $md5_ref->{hostname}) {
+  my $pre_hostname_ref = $md5_ref->{hostname};
+  if (ref $md5_ref->{hostname} eq 'ARRAY') {
+    my $diff = Array::Diff->diff( $md5_ref->{hostname}, \@dns_hostnames );
+
+    for my $host ( unique @{$diff->deleted} ) {
+      $api->record_remove({ name => $host });
+
+    }
+
+  }
+}
+
+$md5_ref->{hostname} = \@dns_hostnames;
 seek $fh, 0, 0;
 truncate $fh, 0;
 print {$fh} encode_json $md5_ref, "\n";

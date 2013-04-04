@@ -297,11 +297,29 @@ package MyDNS::API::Domain 0.01 {
 
   }
 
+  sub record_remove {
+    my ($self, @args) = @_;
+
+    my $txn = $self->db->txn_scope_guard;
+    my $rr_rs = $self->db->resultset('Rr');
+
+    for my $arg ( @args ) {
+
+      $arg->{zone} = $self->get_domain_id;
+      $rr_rs->search( $arg )->delete;
+
+    }
+
+    $txn->commit;
+    $self->changed(1);
+
+  }
+
 
   sub zone_remove {
     my ($self) = @_;
 
-    my $txn  = $self->db->txn_scope_guard;
+    my $txn = $self->db->txn_scope_guard;
 
     my $domain_id = $self->get_domain_id;
 
