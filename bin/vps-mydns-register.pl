@@ -21,8 +21,11 @@ my @vlan_ids = @ARGV;
 $domain       or croak "*** domain is empty";
 @vlan_ids > 0 or croak "*** no vlan id";
 
-my $managed_tag  = q{MANAGED};
-my $ttl          = 300;
+my $select_tag = exists $ENV{SELECT_TAG}
+               ? $ENV{SELECT_TAG}
+               : undef;
+
+my $ttl = 300;
 
 my $admin_key    = $ENV{MURAKUMO_ADMIN_KEY};
 my $api_base_uri = $ENV{MURAKUMO_API_URI};
@@ -30,7 +33,7 @@ my $db_user      = $ENV{MYSQLD_USER};
 my $db_password  = $ENV{MYSQLD_PASSWORD};
 my $debug        = exists $ENV{DEBUG} ? $ENV{DEBUG} : 0;
 
-my $pre_data_md5_file = q{/var/tmp/mydns-register.json};
+my $pre_data_md5_file = qq{/var/tmp/mydns-register.$domain.json};
 
 my $fh;
 if (! -f $pre_data_md5_file) {
@@ -83,33 +86,38 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
   my $current_md5 = md5_hex $json;
 
+  if (defined $select_tag) {
+    @ip_datas = grep { $_->{tag} and $_->{tag} eq $select_tag }
+                     @ip_datas;
+  }
+
+  push @dns_hostnames,
+       (
+         unique
+         map  { $_->{name} }
+         grep { ! $_->{secondary} }
+         grep { defined $_->{name} }
+         @ip_datas
+       );
+
   if (exists $md5_ref->{vlan}->{$vlan_id}) {
+    warn "$md5_ref->{vlan}->{$vlan_id} eq $current_md5";
     $md5_ref->{vlan}->{$vlan_id} eq $current_md5
       and next VLAN_ID;
   }
-
   $md5_ref->{vlan}->{$vlan_id} = $current_md5;
 
   if (@ip_datas == 0) {
     next VLAN_ID;
   }
 
-  push @dns_hostnames,
-       (
-         map  { $_->{name} }
-         grep { $_->{tag} eq $managed_tag }
-         grep { defined $_->{name} and defined $_->{tag} }
-         @ip_datas
-       );
-
+  IP_DATA:
   for my $r ( @ip_datas ) {
     $r->{tag} //= qq{};
 
-    $r->{secondary}           and next;
-    $r->{tag} eq $managed_tag or  next;
-
     local $@;
     eval {
+      warn "try register $r->{name}" if $debug;
       $api->regist(
         +{
            rr => +{
@@ -131,13 +139,17 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
 }
 
+
+@dns_hostnames = sort unique @dns_hostnames;
+
 # お掃除
 if (exists $md5_ref->{hostname}) {
-  my $pre_hostname_ref = $md5_ref->{hostname};
+  my @pre_dns_hostnames = sort unique @{$md5_ref->{hostname}};
   if (ref $md5_ref->{hostname} eq 'ARRAY') {
-    my $diff = Array::Diff->diff( $md5_ref->{hostname}, \@dns_hostnames );
+    my $diff = Array::Diff->diff( \@pre_dns_hostnames, \@dns_hostnames );
 
-    for my $host ( unique @{$diff->deleted} ) {
+    for my $host ( unique sort @{$diff->deleted} ) {
+      warn "try remove $host";
       $api->record_remove({ name => $host });
 
     }
@@ -145,9 +157,9 @@ if (exists $md5_ref->{hostname}) {
   }
 }
 
-$md5_ref->{hostname} = \@dns_hostnames;
 seek $fh, 0, 0;
 truncate $fh, 0;
+$md5_ref->{hostname} = \@dns_hostnames;
 print {$fh} encode_json $md5_ref, "\n";
 
 exit ( $failure ? 1 : 0 );
