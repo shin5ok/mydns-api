@@ -295,6 +295,8 @@ package MyDNS::API::Domain 0.01 {
 
     }
 
+    return 1;
+
   }
 
   sub record_remove {

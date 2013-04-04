@@ -178,7 +178,7 @@ post '/clone/(#src_domain)/to/(#domain)' => sub {
                                                         }
                                         );
 
-  $r->result(1);
+  $r->result($result);
 
   $self->render_json( $r->run );
 
