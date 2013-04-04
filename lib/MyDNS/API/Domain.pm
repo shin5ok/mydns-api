@@ -161,7 +161,14 @@ package MyDNS::API::Domain 0.01 {
 
       );
 
-      $self->regist({ rr => \%rr_param })
+      warn "clone"           if $debug;
+      warn Dumper \%rr_param if $debug;
+      my $option_ref = +{};
+      if ($src_rr->type =~ /^ (?: MX | NS ) /x) {
+        $option_ref = +{ multi => 1 };
+      }
+
+      $self->regist({ rr => \%rr_param }, $option_ref)
         or $error = 1;
 
     }
@@ -215,7 +222,7 @@ package MyDNS::API::Domain 0.01 {
 
 
   sub regist {
-    my ($self, $args) = @_;
+    my ($self, $args, $option_ref) = @_;
 
     my $domain = $self->domain;
 
@@ -276,13 +283,18 @@ package MyDNS::API::Domain 0.01 {
 
         my $rr_rs = $self->db->resultset('Rr');
 
-        my $find_args;
-        %$find_args = %{$rr};
-        delete $find_args->{data};
-        delete $find_args->{ttl};
+        {
+          no strict 'refs';
+          if (! $option_ref->{multi}) {
+            my $find_args;
+            %$find_args = %{$rr};
+            delete $find_args->{data};
+            delete $find_args->{ttl};
 
-        $rr_rs->search($find_args)
-              ->delete;
+            $rr_rs->search($find_args)
+                  ->delete;
+          }
+        }
 
         $rr_rs->update_or_create($rr);
 
