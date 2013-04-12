@@ -7,32 +7,19 @@ use warnings;
 use Carp;
 use File::Basename;
 use POSIX;
+use App::Daemon qw(daemonize);
 
 my $progname = "mydns-api";
-local $ENV{PATH}     = q{/home/smc/bin:} . $ENV{PATH};
 
-my $daemon_and_args = qq(hypnotoad /home/smc/mydns-api/bin/mydns-api);
+local $App::Daemon::logfile    = "/var/log/mydns-api.log";
+local $App::Daemon::pidfile    = "/var/run/mydns-api.pid";
+local $App::Daemon::background = 1;
+local $App::Daemon::as_user    = "root";
 
-my $args = shift || q{start};
-
-if ($args eq 'stop') {
-  $daemon_and_args .= " -s";
-}
-elsif ($args eq 'front-start') {
-  $daemon_and_args .= " -f";
-}
-
+local $ENV{PATH}             = q{/home/smc/bin:} . $ENV{PATH};
 local $ENV{MYDNS_API_CONFIG} = q{/root/mydns-api-config.yaml};
-my $r = system $daemon_and_args;
+my $daemon_and_args = qq(/home/smc/bin/perl /home/smc/local/perl/bin/morbo /home/smc/mydns-api/bin/mydns-api);
 
-my $message = qq{};
-if ($r == 0) {
-  $message = "$progname is $args ok";
-} else {
-  $message = "$progname is $args failure...";
-}
-
-$message .= "($daemon_and_args)";
-
-print $message, "\n";
+daemonize;
+exec $daemon_and_args;
 

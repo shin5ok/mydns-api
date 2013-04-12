@@ -4,6 +4,7 @@ use warnings;
 package MyDNS::API::Domain 0.01 {
   use Carp;
   use Data::Dumper;
+  use Data::Validate::Domain qw(is_domain);
   use IPC::Cmd qw(run run_forked);
   use POSIX q(strftime);
   use Smart::Args;
@@ -19,6 +20,8 @@ package MyDNS::API::Domain 0.01 {
 
     defined $domain
       or croak "*** domain name is not found";
+    is_domain( $domain )
+      or croak "*** domain name is invalid";
 
     no strict 'refs';
     my $auto_notify = delete $params->{auto_notify} // 0;
