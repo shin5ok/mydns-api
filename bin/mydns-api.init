@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/home/smc/bin/perl
 # chkconfig: 2345 99 10
 # description: mydns api
 
