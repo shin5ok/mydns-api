@@ -54,13 +54,14 @@ helper mydns => sub {
 
 app->renderer->default_format('json');
 app->config({
-              hypnotoad => {
-                listen             => [ 'https://*:63001' ],
-                workers            => 8,
-                accepts            => 64,
-                graceful_timeout   => 30,
-                inactivity_timeout => 120,
-              },
+              # not use hypnotoad
+              # hypnotoad => {
+              #   listen             => [ 'https://*:63001' ],
+              #   workers            => 8,
+              #   accepts            => 64,
+              #   graceful_timeout   => 30,
+              #   inactivity_timeout => 120,
+              # },
             });
 
 if (! $debug) {

@@ -8,6 +8,7 @@ use Carp;
 use File::Basename;
 use POSIX;
 use App::Daemon qw(daemonize);
+use Data::Dumper;
 
 my $progname = "mydns-api";
 
@@ -18,8 +19,13 @@ local $App::Daemon::as_user    = "root";
 
 local $ENV{PATH}             = q{/home/smc/bin:} . $ENV{PATH};
 local $ENV{MYDNS_API_CONFIG} = q{/root/mydns-api-config.yaml};
-my $daemon_and_args = qq(/home/smc/bin/perl /home/smc/local/perl/bin/morbo /home/smc/mydns-api/bin/mydns-api);
+my $options = q{--listen https://*:63001};
+my $daemon_and_args = qq(/home/smc/bin/perl /home/smc/local/perl/bin/morbo $options /home/smc/mydns-api/bin/mydns-api);
 
-daemonize;
-exec $daemon_and_args;
+if ($ARGV[0] eq q{debug}) {
+  $ENV{DEBUG} = 1;
+} else {
+  daemonize;
+}
 
+exec split /\s+/, $daemon_and_args;
