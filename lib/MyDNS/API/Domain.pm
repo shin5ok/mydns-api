@@ -14,14 +14,20 @@ package MyDNS::API::Domain 0.01 {
   my $debug = exists $ENV{DEBUG} ? $ENV{DEBUG} : 0;
 
   sub new {
-    my ($class, $params) = @_;
+    my ($class, $params, $option) = @_;
 
     my $domain = delete $params->{domain};
 
     defined $domain
       or croak "*** domain name is not found";
-    is_domain( $domain )
-      or croak "*** domain name is invalid";
+
+    {
+      no strict 'refs';
+      if (! $option->{no_validate_domainname}) {
+        is_domain( $domain )
+          or croak "*** domain name is invalid";
+      }
+    }
 
     no strict 'refs';
     my $auto_notify = delete $params->{auto_notify} // 0;

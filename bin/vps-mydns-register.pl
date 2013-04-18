@@ -51,12 +51,17 @@ seek $fh, 0, 0;
 my $pre = do { local $/; <$fh>; };
 my $md5_ref = decode_json $pre;
 
-my $api = MyDNS::API::Domain->new({
-                                    domain      => $domain,
-                                    dsn         => 'dbi:mysql:database=mydns',
-                                    db_user     => $db_user,
-                                    db_password => $db_password,
-                                  });
+my $api = MyDNS::API::Domain->new(
+                                    {
+                                      domain      => $domain,
+                                      dsn         => 'dbi:mysql:database=mydns',
+                                      db_user     => $db_user,
+                                      db_password => $db_password,
+                                    },
+                                    {
+                                      no_validate_domainname => 1,
+                                    },
+                                  );
 
 my $ua = LWP::UserAgent->new;
 
