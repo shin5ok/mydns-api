@@ -15,6 +15,7 @@ use MyDNS::API::Domain;
 our $yaml_file = exists $ENV{MYDNS_API_CONFIG}
                ? $ENV{MYDNS_API_CONFIG}
                : q{config.yaml};
+
 my $config = YAML::LoadFile($yaml_file);
 my $debug = exists $ENV{DEBUG}
           ? $ENV{DEBUG}
@@ -157,10 +158,10 @@ get '/domain/(#domain)' => sub {
 post '/clone/(#src_domain)/to/(#domain)' => sub {
   my $self = shift;
 
-  my $body          = $self->req->body;
-  my $params        = decode_json $body;
-  my $mydns_domain  = $self->mydns_domain;
-  my $r             = $self->r;
+  my $body         = $self->req->body;
+  my $params       = decode_json $body;
+  my $mydns_domain = $self->mydns_domain;
+  my $r            = $self->r;
 
   my $src_domain = $self->param('src_domain');
 

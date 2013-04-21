@@ -12,8 +12,8 @@ use Data::Dumper;
 
 my $progname = "mydns-api";
 
-local $App::Daemon::logfile    = "/var/log/mydns-api.log";
-local $App::Daemon::pidfile    = "/var/run/mydns-api.pid";
+local $App::Daemon::logfile    = "/var/log/${progname}.log";
+local $App::Daemon::pidfile    = "/var/run/${progname}.pid";
 local $App::Daemon::background = 1;
 local $App::Daemon::as_user    = "root";
 
