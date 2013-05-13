@@ -67,6 +67,8 @@ my $ua = LWP::UserAgent->new;
 
 my @dns_hostnames;
 my $failure;
+my $regist_total = 0;
+my $regist_ok    = 0;
 VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
   my $uri = URI->new( qq{$api_base_uri/ip_with_name/$vlan_id} );
@@ -106,7 +108,7 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
        );
 
   if (exists $md5_ref->{vlan}->{$vlan_id}) {
-    warn "$md5_ref->{vlan}->{$vlan_id} eq $current_md5";
+    warn "$md5_ref->{vlan}->{$vlan_id} eq $current_md5" if $debug;
     $md5_ref->{vlan}->{$vlan_id} eq $current_md5
       and next VLAN_ID;
   }
@@ -120,6 +122,8 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
   for my $r ( @ip_datas ) {
     $r->{tag} //= qq{};
 
+    $regist_total++;
+
     local $@;
     eval {
       warn "try register $r->{name}" if $debug;
@@ -132,7 +136,8 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
              ttl  => $ttl,
            },
         }
-      );
+      )
+      and $regist_ok++;
     };
     if ($@) {
       HG::Escalation->send_my_nrpe({ target => 'MYDNS_ERROR', log => $@, exit_status => 2, });
@@ -162,10 +167,15 @@ if (exists $md5_ref->{hostname}) {
   }
 }
 
-seek $fh, 0, 0;
-truncate $fh, 0;
-$md5_ref->{hostname} = \@dns_hostnames;
-print {$fh} encode_json $md5_ref, "\n";
+# エラーがなく、mydnsの変更がされていたら
+if (! $failure and $regist_total == $regist_ok) {
+
+  seek $fh, 0, 0;
+  truncate $fh, 0;
+  $md5_ref->{hostname} = \@dns_hostnames;
+  print {$fh} encode_json $md5_ref, "\n";
+
+}
 
 exit ( $failure ? 1 : 0 );
 

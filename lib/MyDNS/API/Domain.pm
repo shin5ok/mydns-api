@@ -154,7 +154,7 @@ package MyDNS::API::Domain 0.01 {
                ? $args->{ip}
                : $src_rr->data;
 
-      $data =~ s/(\.?)${src_domain}(\.?)$/${1}${dst_domain}${2}/;
+      $data =~ s/([\:\.]?)${src_domain}(\.?)/${1}${dst_domain}${2}/;
 
       my $name = $src_rr->name eq $src_domain
                ? $dst_domain
