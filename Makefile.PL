@@ -20,6 +20,7 @@ WriteMakefile(
        Log::Dispatch::Syslog => 2.35,
        Data::Validate::Domain => 0.10,
        MojoX::Log::Log4perl => 0.06,
+       opts => 0.05,
        Array::Diff => 0.07,
        Array::Utils => 0.5,
        App::Daemon => 0.18,

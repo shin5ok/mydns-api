@@ -12,14 +12,18 @@ use Fcntl qw(:flock);
 use File::Basename;
 use Carp;
 use MyDNS::API::Domain;
+use Sys::Syslog qw(:DEFAULT setlogsock);
+use opts;
 
 use lib qw( /usr/local/nagios/libexec/modules );
 use HG::Escalation;
 
 my $domain   = shift;
-my @vlan_ids = @ARGV;
+my @vlan_ids = @ARGV; # 同じ名前が後ろにあると上書きする
 $domain       or croak "*** domain is empty";
 @vlan_ids > 0 or croak "*** no vlan id";
+
+opts my $cleanup => { isa => 'Bool' };
 
 my $select_tag = exists $ENV{SELECT_TAG}
                ? $ENV{SELECT_TAG}
@@ -83,11 +87,16 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
   if (! $response->is_success) {
     exit 1;
   }
-  warn $response->content if $debug;
+  logging( $response->content );
 
   my $json = $response->content;
 
   my $hash_ref    = decode_json $json;
+  if (! $hash_ref->{result}) {
+    warn $uri . " is api error";
+    next;
+  }
+
   my $ip_data_ref = $hash_ref->{data};
   my @ip_datas    = @$ip_data_ref;
 
@@ -108,7 +117,7 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
        );
 
   if (exists $md5_ref->{vlan}->{$vlan_id}) {
-    warn "$md5_ref->{vlan}->{$vlan_id} eq $current_md5" if $debug;
+    logging( "$md5_ref->{vlan}->{$vlan_id} eq $current_md5" );
     $md5_ref->{vlan}->{$vlan_id} eq $current_md5
       and next VLAN_ID;
   }
@@ -126,7 +135,7 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
     local $@;
     eval {
-      warn "try register $r->{name}" if $debug;
+      logging( "try register $r->{name}" );
       $api->regist(
         +{
            rr => +{
@@ -153,17 +162,20 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 @dns_hostnames = sort unique @dns_hostnames;
 
 # お掃除
-if (exists $md5_ref->{hostname}) {
-  my @pre_dns_hostnames = sort unique @{$md5_ref->{hostname}};
-  if (ref $md5_ref->{hostname} eq 'ARRAY') {
-    my $diff = Array::Diff->diff( \@pre_dns_hostnames, \@dns_hostnames );
+if ($cleanup) {
 
-    for my $host ( unique sort @{$diff->deleted} ) {
-      warn "try remove $host";
-      $api->record_remove({ name => $host });
+  if (exists $md5_ref->{hostname}) {
+    my @pre_dns_hostnames = sort unique @{$md5_ref->{hostname}};
+    if (ref $md5_ref->{hostname} eq 'ARRAY') {
+      my $diff = Array::Diff->diff( \@pre_dns_hostnames, \@dns_hostnames );
+
+      for my $host ( unique sort @{$diff->deleted} ) {
+        logging( "try remove $host" );
+        $api->record_remove({ name => $host });
+
+      }
 
     }
-
   }
 }
 
@@ -178,4 +190,17 @@ if (! $failure and $regist_total == $regist_ok) {
 }
 
 exit ( $failure ? 1 : 0 );
+
+
+sub logging {
+  my $string = shift;
+  my $ident  = basename __FILE__;
+  openlog $ident, 'ndelay,pid', 'local0';
+  syslog 'info', $string;
+  closelog;
+  if ($debug) {
+    warn "DEBUG: ", $string;
+  }
+}
+
 
