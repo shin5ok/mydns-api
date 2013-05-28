@@ -23,7 +23,8 @@ my @vlan_ids = @ARGV; # 同じ名前が後ろにあると上書きする
 $domain       or croak "*** domain is empty";
 @vlan_ids > 0 or croak "*** no vlan id";
 
-opts my $cleanup => { isa => 'Bool' };
+opts my $cleanup => { isa => 'Bool' },
+     my $force   => { isa => 'Bool' };
 
 my $select_tag = exists $ENV{SELECT_TAG}
                ? $ENV{SELECT_TAG}
@@ -118,9 +119,12 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
   if (exists $md5_ref->{vlan}->{$vlan_id}) {
     logging( "$md5_ref->{vlan}->{$vlan_id} eq $current_md5" );
-    $md5_ref->{vlan}->{$vlan_id} eq $current_md5
-      and next VLAN_ID;
+    if (! $force) {
+      $md5_ref->{vlan}->{$vlan_id} eq $current_md5
+        and next VLAN_ID;
+    }
   }
+
   $md5_ref->{vlan}->{$vlan_id} = $current_md5;
 
   if (@ip_datas == 0) {
