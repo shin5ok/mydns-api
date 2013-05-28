@@ -139,7 +139,7 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
 
     local $@;
     eval {
-      logging( "try register $r->{name}" );
+      logging( "try register $r->{name} at $domain" );
       $api->regist(
         +{
            rr => +{
@@ -174,7 +174,7 @@ if ($cleanup) {
       my $diff = Array::Diff->diff( \@pre_dns_hostnames, \@dns_hostnames );
 
       for my $host ( unique sort @{$diff->deleted} ) {
-        logging( "try remove $host" );
+        logging( "try remove $host at $domain" );
         $api->record_remove({ name => $host });
 
       }

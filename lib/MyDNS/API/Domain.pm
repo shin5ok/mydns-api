@@ -268,8 +268,10 @@ package MyDNS::API::Domain 0.01 {
       delete $find_args->{minimum};
       delete $find_args->{expire};
 
-      $soa_rs->search($find_args)
-             ->delete;
+      my $find_rs = $soa_rs->search($find_args);
+      if ($find_rs->count > 0) {
+        $find_rs->delete;
+      }
 
       $soa_rs->update_or_create($soa);
 
@@ -300,8 +302,10 @@ package MyDNS::API::Domain 0.01 {
             delete $find_args->{data};
             delete $find_args->{ttl};
 
-            $rr_rs->search($find_args)
-                  ->delete;
+            my $find_rs = $rr_rs->search($find_args);
+            if ($find_rs->count > 0) {
+              $find_rs->delete;
+            }
           }
         }
 
