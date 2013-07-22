@@ -75,7 +75,7 @@ __END__
 
 =head1 NAME
 
-MyDNS::API -
+MyDNS::API - a mydns config module
 
 =head1 SYNOPSIS
 
@@ -83,7 +83,7 @@ MyDNS::API -
 
 =head1 DESCRIPTION
 
-MyDNS::API is
+MyDNS::API is a module for mydns config
 
 =head1 AUTHOR
 

@@ -461,15 +461,15 @@ __END__
 
 =head1 NAME
 
-MyDNS::API::Domain -
+MyDNS::API::Domain - for domain record operation
 
 =head1 SYNOPSIS
 
-  use MyDNS::API;
+  use MyDNS::API::Domain
 
 =head1 DESCRIPTION
 
-MyDNS::API is
+MyDNS::API::Domain is a module for domain operation on mydns
 
 =head1 AUTHOR
 
