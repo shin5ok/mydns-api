@@ -214,25 +214,6 @@ post '/domain/(#domain)' => sub {
 
 };
 
-# post '/send_notify/(#domain)' => sub {
-#   my $self = shift;
-#
-# };
-#
-# put '/domain/(#domain)' => sub {
-#   my $self = shift;
-#
-# };
-#
-# del '/domain/(#domain)' => sub {
-#   my $self = shift;
-#
-# };
-#
-# any '*' => sub {
-#   my $self = shift;
-#
-# };
 
 package Run 0.01 {
   use strict;
@@ -250,7 +231,7 @@ package Run 0.01 {
        app     => $app,
 
      };
-   }
+  }
 
   sub run {
     my ($self, $hash_ref) = @_;
