@@ -99,7 +99,9 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
   }
 
   my $ip_data_ref = $hash_ref->{data};
-  my @ip_datas    = @$ip_data_ref;
+
+  no strict 'refs';
+  my @ip_datas    = grep { not $_->{secondary} } @$ip_data_ref;
 
   my $current_md5 = md5_hex $json;
 
@@ -131,6 +133,7 @@ VLAN_ID: for my $vlan_id ( @vlan_ids ) {
     next VLAN_ID;
   }
 
+  no strict 'refs';
   IP_DATA:
   for my $r ( @ip_datas ) {
     $r->{tag} //= qq{};
