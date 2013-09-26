@@ -189,8 +189,8 @@ post '/clone/(#src_domain)/to/(#domain)' => sub {
 post '/domain/(#domain)' => sub {
   my $self = shift;
 
-  my $body          = $self->req->body;
-  my $params        = decode_json $body;
+  my $body   = $self->req->body;
+  my $params = decode_json $body;
 
   my $log = sprintf "try domain %s %s",
                     $params->{mode},

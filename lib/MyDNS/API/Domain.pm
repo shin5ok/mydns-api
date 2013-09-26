@@ -41,6 +41,14 @@ package MyDNS::API::Domain 0.01 {
 
     }
 
+    my $serial_obj_arg = +{
+                             domain  => $obj->domain,
+                          };
+    $serial_obj_arg->{db_path} = $option->{db_path} if $option->{db_path};
+
+    require MyDNS::API::Domain::Serial;
+    $obj->{serial_obj} = MyDNS::API::Domain::Serial->new( $serial_obj_arg );
+
     return $obj;
 
   }
@@ -117,7 +125,7 @@ package MyDNS::API::Domain 0.01 {
        origin => $dst_domain,
        ns     => $src_soa->ns,
        mbox   => $src_soa->mbox,
-       serial => (strftime "%Y%m%d00", localtime),
+       serial => $self->generate_valid_serial,
       refresh => $src_soa->refresh,
         retry => $src_soa->retry,
        expire => $src_soa->expire,
@@ -437,24 +445,19 @@ package MyDNS::API::Domain 0.01 {
   }
 
 
-  sub serial {
+  sub generate_valid_serial {
     my $self  = shift;
-    my $value = shift;
 
-    my $removed_rs = $self->db->resultset('RemovedZone');
+    my $cur_serial = strftime "%Y%m%d01", localtime;
 
-    if (defined $value) {
-      $removed_rs->update_or_create({
-                                      zone   => $self->domain,
-                                      serial => $value,
-                                    });
-      return 1;
+    my $serial_obj = $self->{serial_obj};
 
-    } else {
-      my $result = $removed_rs->find( $self->domain );
-      return $result->serial;
+    if (my $old_serial = $serial_obj->serial) {
+      while ($old_serial >= $cur_serial) {
+        $cur_serial++;
+      }
     }
-
+    return $cur_serial;
   }
 
 
