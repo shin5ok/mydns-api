@@ -31,8 +31,8 @@ package MyDNS::API 0.05 {
     push @args, $db_password if defined $db_password;
 
     my $obj = bless {
-                db          => $class->connect( @args ),
-                changed     => 0,
+                db      => $class->connect( @args ),
+                changed => 0,
               }, $class;
 
     if ($dsn =~ /^dbi:mysql:([^;:]+)/) {

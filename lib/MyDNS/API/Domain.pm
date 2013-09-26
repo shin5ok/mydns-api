@@ -350,10 +350,10 @@ package MyDNS::API::Domain 0.01 {
 
     my $domain_id = $self->get_domain_id;
 
-    my $rr_rs  = $self->db->resultset('Rr');
-    my $soa_rs = $self->db->resultset('Soa');
+    my $rr_rs      = $self->db->resultset('Rr');
+    my $soa_rs     = $self->db->resultset('Soa');
 
-    $rr_rs->search ({ zone => $domain_id })->delete;
+    $rr_rs ->search({ zone => $domain_id })->delete;
     $soa_rs->search({ id   => $domain_id })->delete;
 
     if ($self->get_domain_id) {
@@ -411,8 +411,8 @@ package MyDNS::API::Domain 0.01 {
 
     }
 
-
   }
+
 
   sub get_zone_bind_format {
     my ($self) = @_;
@@ -434,6 +434,27 @@ package MyDNS::API::Domain 0.01 {
     $data =~ s/^;[^\n]*\n//gms;
 
     return $data;
+  }
+
+
+  sub serial {
+    my $self  = shift;
+    my $value = shift;
+
+    my $removed_rs = $self->db->resultset('RemovedZone');
+
+    if (defined $value) {
+      $removed_rs->update_or_create({
+                                      zone   => $self->domain,
+                                      serial => $value,
+                                    });
+      return 1;
+
+    } else {
+      my $result = $removed_rs->find( $self->domain );
+      return $result->serial;
+    }
+
   }
 
 
