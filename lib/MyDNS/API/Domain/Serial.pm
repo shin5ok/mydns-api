@@ -24,7 +24,7 @@ package MyDNS::API::Domain::Serial 0.01 {
          my $db_path => { isa => 'Str', optional => 1, default => $default_path };
 
     unless (-w $db_path and -r _) {
-      croak "*** $db_path permission denied";
+      croak "*** $db_path cannot open";
     }
 
     my $dsn = sprintf "dbi:SQLite:%s", $db_path;
