@@ -57,7 +57,6 @@ package MyDNS::API::Domain::Serial 0.01 {
       return undef if not defined $result;
       return $result->serial;
     }
-
   }
 }
 

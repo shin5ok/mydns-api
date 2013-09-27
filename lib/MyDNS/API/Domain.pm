@@ -74,6 +74,7 @@ package MyDNS::API::Domain 0.01 {
     my $zone = $soa_rs->find({ origin => $self->domain });
 
     $zone or return q{};
+
     return $zone->id;
 
   }
@@ -198,6 +199,23 @@ package MyDNS::API::Domain 0.01 {
       return 0;
 
     }
+
+  }
+
+  sub get_domain_serial {
+    my ($self) = @_;
+
+    my $soa_info = $self->soa_info;
+    return $soa_info->{serial};
+  }
+
+  sub soa_info {
+    my ($self) = @_;
+
+    my $soa_rs   = $self->db->resultset('Soa');
+    # my ($result) = $soa_rs->search( { id => $self->get_domain_id } );
+    my $result = $soa_rs->find( my $id = $self->get_domain_id );
+    return +{ $result->get_columns };
 
   }
 
@@ -354,6 +372,9 @@ package MyDNS::API::Domain 0.01 {
   sub zone_remove {
     my ($self) = @_;
 
+    my $serial_obj = $self->{serial_obj};
+    $serial_obj->serial($self->get_domain_serial);
+
     my $txn = $self->db->txn_scope_guard;
 
     my $domain_id = $self->get_domain_id;
@@ -369,6 +390,7 @@ package MyDNS::API::Domain 0.01 {
     }
 
     $txn->commit;
+
 
   }
 
@@ -452,7 +474,8 @@ package MyDNS::API::Domain 0.01 {
 
     my $serial_obj = $self->{serial_obj};
 
-    if (my $old_serial = $serial_obj->serial) {
+    warn "cur_serial: $cur_serial";
+    if (defined(my $old_serial = $serial_obj->serial)) {
       while ($old_serial >= $cur_serial) {
         $cur_serial++;
       }
