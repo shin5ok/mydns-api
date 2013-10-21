@@ -104,9 +104,9 @@ if (! $failure) {
   seek $fh, 0, 0;
   truncate $fh, 0;
   print {$fh} $current_md5;
-  exit 1;
+  exit 0;
 }
-exit 0;
+exit 1;
 
 
 sub logging {
