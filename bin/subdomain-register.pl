@@ -70,15 +70,16 @@ if (! $response->is_success) {
   croak "*** $domain_api cannot be available";
 }
 
-my $current_md5 = md5_hex $response->content;
-
-warn qq($current_md5 eq $pre_md5);
-if ($current_md5 eq $pre_md5) {
-  warn "Nothing done";
-  exit 0;
-}
+my $content = $response->content;
 
 my $ref = decode_json $response->content;
+my $current_md5 = md5_hex ( join "\n", sort @{$ref->{data}} );
+
+if ($current_md5 eq $pre_md5) {
+  logging (qq{nothing done});
+  exit 0;
+}
+logging (qq{$current_md5 ne $pre_md5});
 
 no strict 'refs';
 for my $r ( @{$ref->{data}} ) {
