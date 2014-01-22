@@ -19,7 +19,7 @@ local $App::Daemon::as_user    = "root";
 
 local $ENV{PATH}             = q{/home/smc/bin:} . $ENV{PATH};
 local $ENV{MYDNS_API_CONFIG} = q{/root/mydns-api-config.yaml};
-my $options = q{--listen https://*:63001};
+my $options = q{-w /dev/null --listen https://*:63001};
 my $daemon_and_args = qq(/home/smc/bin/perl /home/smc/local/perl/bin/morbo $options /home/smc/mydns-api/bin/mydns-api);
 
 if ($ARGV[0] eq q{debug}) {
