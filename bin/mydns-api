@@ -197,11 +197,22 @@ post '/domain/(#domain)' => sub {
                     $self->param('domain');
   $self->app->log->info( $log );
 
+  warn Dumper $params;
+
+  my $mode = delete $params->{mode};
+  if (not defined $mode) {
+    croak "'mode' key is not found";
+  }
+
   no strict 'refs';
   my $result;
-  if ($params->{mode} eq 'remove') {
-    my $mydns_domain = $self->mydns_domain;
+  my $mydns_domain = $self->mydns_domain;
+
+  if ($mode eq 'remove') {
     $result = $mydns_domain->zone_remove;
+  }
+  elsif ($mode eq 'create') {
+    $result = $mydns_domain->regist( $params );
   }
 
   my $r = $self->r;
