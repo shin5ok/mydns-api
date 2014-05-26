@@ -307,41 +307,51 @@ package MyDNS::API::Domain 0.01 {
 
 
     if (exists $args->{rr}) {
-      my $rr = $args->{rr};
+      my $args_rr = $args->{rr};
 
-      if ($rr->{type}) {
+      my @rrs;
+      if (ref $args_rr eq q{ARRAY}) {
+        push @rrs, @$args_rr;
+      } else {
+        push @rrs, $args_rr;
+      }
 
-        my $name  = $rr->{name};
-        my $type  = $rr->{type};
+      for my $rr ( @rrs ) {
 
-        my $zone_id = $self->get_domain_id;
+        if ($rr->{type}) {
 
-        $rr->{zone} = $zone_id;
+          my $name  = $rr->{name};
+          my $type  = $rr->{type};
 
-        my $rr_rs = $self->db->resultset('Rr');
+          my $zone_id = $self->get_domain_id;
 
-        {
-          no strict 'refs';
-          if (! $option_ref->{multi}) {
-            my $find_args;
-            %$find_args = %{$rr};
-            delete $find_args->{data};
-            delete $find_args->{ttl};
+          $rr->{zone} = $zone_id;
 
-            my $find_rs = $rr_rs->search($find_args);
-            if ($find_rs->count > 0) {
-              $find_rs->delete;
+          my $rr_rs = $self->db->resultset('Rr');
+
+          {
+            no strict 'refs';
+            if (! $option_ref->{multi}) {
+              my $find_args;
+              %$find_args = %{$rr};
+              delete $find_args->{data};
+              delete $find_args->{ttl};
+
+              my $find_rs = $rr_rs->search($find_args);
+              if ($find_rs->count > 0) {
+                $find_rs->delete;
+              }
             }
           }
+
+          $rr_rs->update_or_create($rr);
+
+          $self->changed(1);
+
+        } else {
+          croak "*** type for rr is not found";
+
         }
-
-        $rr_rs->update_or_create($rr);
-
-        $self->changed(1);
-
-      } else {
-        croak "*** type for rr is not found";
-
       }
 
     }

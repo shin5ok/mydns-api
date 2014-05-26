@@ -212,7 +212,7 @@ post '/domain/(#domain)' => sub {
     $result = $mydns_domain->zone_remove;
   }
   elsif ($mode eq 'create') {
-    $result = $mydns_domain->regist( $params );
+    $result = $mydns_domain->regist( $params, { multi => 1 } );
   }
 
   my $r = $self->r;
