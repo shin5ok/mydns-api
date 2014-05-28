@@ -186,7 +186,8 @@ post '/clone/(#src_domain)/to/(#domain)' => sub {
 
 };
 
-post '/domain/(#domain)' => sub {
+post '/domain/(#domain)/(:id)'
+     => { id => undef } => sub {
   my $self = shift;
 
   my $body   = $self->req->body;
@@ -197,8 +198,6 @@ post '/domain/(#domain)' => sub {
                     $self->param('domain');
   $self->app->log->info( $log );
 
-  warn Dumper $params;
-
   my $mode = delete $params->{mode};
   if (not defined $mode) {
     croak "'mode' key is not found";
@@ -208,8 +207,14 @@ post '/domain/(#domain)' => sub {
   my $result;
   my $mydns_domain = $self->mydns_domain;
 
+  my $rid = $self->param('id');
+
   if ($mode eq 'remove') {
-    $result = $mydns_domain->zone_remove;
+    if (not defined $rid) {
+      $result = $mydns_domain->zone_remove;
+    } else {
+      $result = $mydns_domain->record_remove({ id => $rid });
+    }
   }
   elsif ($mode eq 'create') {
     $result = $mydns_domain->regist( $params, { multi => 1 } );
