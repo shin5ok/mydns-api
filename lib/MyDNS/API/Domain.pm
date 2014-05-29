@@ -285,7 +285,7 @@ package MyDNS::API::Domain 0.01 {
 
       {
         no strict 'refs';
-        if (! $option_ref->{soa_multi}) {
+        if (! $option_ref->{multi}) {
           my @soas = $soa_rs->search({ origin => $domain });
           if (@soas > 0) {
             croak "$domain has already exist";
