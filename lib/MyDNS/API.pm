@@ -58,7 +58,7 @@ package MyDNS::API 0.05 {
                     $soa_rs->search;
 
     my %domain  = map { $id2domain{$_->zone} => 1 }
-                  grep { $_->zone }
+                  grep { defined $_ and $_->zone }
                   $rr_rs->search( $rr_query );
 
     my @domains = grep { $_ } keys %domain;

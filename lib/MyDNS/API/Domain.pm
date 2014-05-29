@@ -10,6 +10,7 @@ package MyDNS::API::Domain 0.01 {
   use Smart::Args;
 
   use base qw( MyDNS::API );
+  use MyDNS::Config;
 
   my $debug  = exists $ENV{DEBUG} ? $ENV{DEBUG} : 0;
   my $config = MyDNS::Config->config;
@@ -281,6 +282,16 @@ package MyDNS::API::Domain 0.01 {
 
     if (exists $args->{soa}) {
       my $soa = $args->{soa};
+
+      {
+        no strict 'refs';
+        if (! $option_ref->{soa_multi}) {
+          my @soas = $soa_rs->search({ origin => $domain });
+          if (@soas > 0) {
+            croak "$domain has already exist";
+          }
+        }
+      }
 
       my $soa_default = $config->{soa_default};
       %$soa = (%$soa_default, %$soa);
