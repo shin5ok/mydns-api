@@ -219,14 +219,29 @@ package MyDNS::API::Domain 0.01 {
 
   }
 
-
-  sub zone_info {
+  sub zone_info_all {
     my ($self) = @_;
 
-    my $rr_rs  = $self->db->resultset('Rr');
     my $soa_rs = $self->db->resultset('Soa');
 
     my $id = $self->get_domain_id;
+
+    my ($soa_info) = $soa_rs->search({ id => $id });
+
+    return +{
+      soa => +{ $soa_info->get_columns },
+      rr  => $self->zone_info($id),
+    }
+
+  }
+
+
+  sub zone_info {
+    my ($self, $id) = @_;
+
+    my $rr_rs  = $self->db->resultset('Rr');
+
+    $id //= $self->get_domain_id;
 
     if (! $id) {
       croak "*** domain not found";

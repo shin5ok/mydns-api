@@ -126,6 +126,7 @@ get '/domain/(#domain)' => sub {
   my $domain       = $self->param('domain');
   my $no_zone_data = $self->param('no_zone_data');
   my $format       = $self->param('format') || qq{};
+  my $all          = $self->param('all')    // undef;
 
   my $r = $self->r;
 
@@ -133,7 +134,12 @@ get '/domain/(#domain)' => sub {
   eval {
 
     if ($format ne 'bind') {
-      my $info = $mydns_domain->zone_info;
+
+      my $getter = defined $all
+                 ? "zone_info_all"
+                 : "zone_info";
+
+      my $info = $mydns_domain->$getter;
 
       $r->result(1);
       if (! $no_zone_data) {
