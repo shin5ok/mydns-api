@@ -11,7 +11,8 @@ package MyDNS::API::Domain 0.01 {
 
   use base qw( MyDNS::API );
 
-  my $debug = exists $ENV{DEBUG} ? $ENV{DEBUG} : 0;
+  my $debug  = exists $ENV{DEBUG} ? $ENV{DEBUG} : 0;
+  my $config = MyDNS::Config->config;
 
   sub new {
     my ($class, $params, $option) = @_;
@@ -280,6 +281,9 @@ package MyDNS::API::Domain 0.01 {
 
     if (exists $args->{soa}) {
       my $soa = $args->{soa};
+
+      my $soa_default = $config->{soa_default};
+      %$soa = (%$soa_default, %$soa);
 
       $soa->{origin} = $domain;
 
