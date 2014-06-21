@@ -57,9 +57,14 @@ package MyDNS::API 0.05 {
     my %id2domain = map { $_->id => $_->origin }
                     $soa_rs->search;
 
-    my %domain  = map { $id2domain{$_->zone} => 1 }
-                  grep { defined $_ and $_->zone }
-                  $rr_rs->search( $rr_query );
+    my %domain;
+    for my $rr ( $rr_rs->search( $rr_query ) ) {
+      if (defined $rr) {
+        my $zone = $rr->zone;
+        exists $id2domain{$zone} or next;
+        $domain{$id2domain{$zone}} = 1;
+      }
+    }
 
     my @domains = grep { $_ } keys %domain;
 
