@@ -26,10 +26,10 @@ package MyDNS::Config 0.01 {
       # +-------------+------------------+------+-----+---------+----------------+
       soa_default => +{
         serial  => (strftime "%Y%m%d00", localtime),
-        refresh => 300,
-        retry   => 300,
-        expire  => 86400,
-        ttl     => 300,
+        refresh => 10800,
+        retry   => 900,
+        expire  => 604800,
+        ttl     => 900,
         minimum => 300,
       },
     }
