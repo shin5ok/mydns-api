@@ -225,6 +225,26 @@ post '/domain/(#domain)/(:id)'
   elsif ($mode eq 'create') {
     $result = $mydns_domain->regist( $params, { multi => 1 } );
   }
+  elsif ($mode eq 'record_modify') {
+
+    # 削除
+    if (my $delete_id = delete $params->{delete}) {
+      $mydns_domain->record_remove( @$delete_id )
+        or croak "record remove failure";
+    }
+    # 修正
+    if (my $modify_ref = delete $params->{modify}) {
+      $mydns_domain->regist( +{ rr => $modify_ref } )
+        or croak "record modify failure";
+    }
+    # 追加
+    if (my $add_ref = delete $params->{add}) {
+      $mydns_domain->regist( +{ rr => $add_ref } )
+        or croak "record add failure";
+    }
+
+    $result = 1;
+  }
 
   my $r = $self->r;
 
