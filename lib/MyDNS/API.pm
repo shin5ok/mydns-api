@@ -15,7 +15,7 @@ package MyDNS::API 0.05 {
   use base qw(DBIx::Class::Schema::Loader);
 
   __PACKAGE__->loader_options(
-       debug         => 0,
+       debug         => exists $ENV{DEBUG} ? $ENV{DEBUG} : 0,
        naming        => 'v4',
        relationships => 1
   );
