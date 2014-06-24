@@ -256,6 +256,18 @@ post '/domain/(#domain)/(:id)'
 
 };
 
+post '/reload/(#domain)' => sub {
+  my ($self) = @_;
+
+  my $r = $self->r;
+
+  if ($self->mydns_domain->send_notify) {
+    $r->result(1);
+  }
+
+  $self->render_json( $r->run );
+
+};
 
 package Run 0.01 {
   use strict;
