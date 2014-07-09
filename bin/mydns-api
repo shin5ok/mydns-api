@@ -225,7 +225,7 @@ post '/domain/(#domain)/(:id)'
   elsif ($mode eq 'create') {
     $result = $mydns_domain->regist( $params, { multi => 1 } );
   }
-  elsif ($mode eq 'record_modify') {
+  elsif ($mode eq 'modify_record') {
 
     # 削除
     if (my $delete_id = delete $params->{delete}) {
