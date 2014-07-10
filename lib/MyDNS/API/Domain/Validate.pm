@@ -13,21 +13,12 @@ package MyDNS::API::Domain::Validate 0.01 {
 
   sub new {
     args my $class,
-         my $name   => { isa => 'Str', default => qq{} },
-         my $data   => { isa => 'Str', default => qq{} },
-         my $domain => { isa => 'Str' };
-
-    if ($name =~ /$domain$/) {
-      $name .= $domain;
-    }
-    if ($data =~ /$domain$/) {
-      $data .= $domain;
-    }
+         my $name   => { isa => 'Str' },
+         my $data   => { isa => 'Str' };
 
     my $obj = bless {
                 name   => $name,
                 data   => $data,
-                domain => $domain,
               }, $class;
 
     return $obj;
