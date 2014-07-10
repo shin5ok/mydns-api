@@ -11,6 +11,7 @@ package MyDNS::API::Domain 0.01 {
 
   use base qw( MyDNS::API );
   use MyDNS::Config;
+  use MyDNS::API::Domain::Validate;
 
   my $debug  = exists $ENV{DEBUG} ? $ENV{DEBUG} : 0;
   my $config = MyDNS::Config->config;

@@ -26,13 +26,17 @@ package MyDNS::API::Domain::Validate 0.01 {
   }
 
   sub valid_domain {
+    my $domain = shift;
+    $domain =~ s/\.$//;
     return
-      is_domain( shift, { domain_private_tld => qr/./ } );
+      is_domain( $domain, { domain_private_tld => qr/./ } );
   }
 
   sub srv_valid_domain {
+    my $domain = shift;
+    $domain =~ s/\.$//;
     return
-      is_domain( shift, {
+      is_domain( $domain, {
                           domain_private_tld => qr/./,
                           domain_allow_underscore => 1,
                         },
@@ -41,6 +45,12 @@ package MyDNS::API::Domain::Validate 0.01 {
   }
 
   sub a {
+    args my $self;
+
+    if (valid_domain($self->name) and is_ipv4($self->data)) {
+      return 1;
+    }
+    return 0;
 
   }
 
