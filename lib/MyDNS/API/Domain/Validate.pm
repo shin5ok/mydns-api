@@ -7,6 +7,9 @@ package MyDNS::API::Domain::Validate 0.01 {
   use DBIx::Class;
   use Smart::Args;
   use Carp;
+  use Data::Validate::Domain qw( is_domain );
+  use Data::Validate::IP qw( is_ipv4 is_ipv6 );
+  use Class::Accessor::Lite ( rw => [qw( name data )] );
 
   sub new {
     args my $class,
@@ -19,6 +22,21 @@ package MyDNS::API::Domain::Validate 0.01 {
               }, $class;
 
     return $obj;
+
+  }
+
+  sub valid_domain {
+    return
+      is_domain( shift, { domain_private_tld => qr/./ } );
+  }
+
+  sub srv_valid_domain {
+    return
+      is_domain( shift, {
+                          domain_private_tld => qr/./,
+                          domain_allow_underscore => 1,
+                        },
+                );
 
   }
 
