@@ -4,7 +4,7 @@ use warnings;
 package MyDNS::API::Domain 0.01 {
   use Carp;
   use Data::Dumper;
-  use Data::Validate::Domain qw(is_domain);
+
   use IPC::Cmd qw(run run_forked);
   use POSIX q(strftime);
   use Smart::Args;
@@ -27,7 +27,7 @@ package MyDNS::API::Domain 0.01 {
     {
       no strict 'refs';
       if (! $option->{no_validate_domainname}) {
-        is_domain( $domain )
+        MyDNS::API::Domain::Validate::valid_domain( $domain )
           or croak "*** domain name is invalid";
       }
     }
@@ -353,6 +353,11 @@ package MyDNS::API::Domain 0.01 {
 
           my $name  = $rr->{name};
           my $type  = $rr->{type};
+
+          my $check_type = lc $type;
+          if ( MyDNS::API::Domain::Validate->new( $args )->$check_type ) {
+            croak "type:$type is invalid";
+          }
 
           my $zone_id = $self->get_domain_id;
 
