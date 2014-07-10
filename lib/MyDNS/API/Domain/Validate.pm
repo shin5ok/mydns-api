@@ -6,6 +6,7 @@ package MyDNS::API::Domain::Validate 0.01 {
   use Data::Dumper;
   use DBIx::Class;
   use Smart::Args;
+  use Carp;
 
   sub new {
     args my $class,
@@ -18,6 +19,30 @@ package MyDNS::API::Domain::Validate 0.01 {
               }, $class;
 
     return $obj;
+
+  }
+
+  sub a {
+
+  }
+
+  sub mx {
+
+  }
+
+  sub aaaa {
+
+  }
+
+  sub ns {
+
+  }
+
+  sub cname {
+
+  }
+
+  sub srv {
 
   }
 
