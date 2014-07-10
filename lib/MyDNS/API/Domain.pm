@@ -355,7 +355,9 @@ package MyDNS::API::Domain 0.01 {
           my $type  = $rr->{type};
 
           my $check_type = lc $type;
-          if ( MyDNS::API::Domain::Validate->new( $args )->$check_type ) {
+          my $check_args = +{ name => $name, data => $rr->{data}, domain => $self->domain };
+          my $check_obj  = MyDNS::API::Domain::Validate->new( $check_args );
+          if ( ! $check_obj->$check_type ) {
             croak "type:$type is invalid";
           }
 

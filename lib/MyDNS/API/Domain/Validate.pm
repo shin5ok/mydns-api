@@ -13,12 +13,21 @@ package MyDNS::API::Domain::Validate 0.01 {
 
   sub new {
     args my $class,
-         my $name => { isa => 'Str' },
-         my $data => { isa => 'Str' };
+         my $name   => { isa => 'Str', default => qq{} },
+         my $data   => { isa => 'Str', default => qq{} },
+         my $domain => { isa => 'Str' };
+
+    if ($name =~ /$domain$/) {
+      $name .= $domain;
+    }
+    if ($data =~ /$domain$/) {
+      $data .= $domain;
+    }
 
     my $obj = bless {
-                name => $name,
-                data => $data,
+                name   => $name,
+                data   => $data,
+                domain => $domain,
               }, $class;
 
     return $obj;
@@ -29,7 +38,11 @@ package MyDNS::API::Domain::Validate 0.01 {
     my $domain = shift;
     $domain =~ s/\.$//;
     return
-      is_domain( $domain, { domain_private_tld => qr/./ } );
+      is_domain( $domain, {
+                            domain_private_tld => qr/[a-z]/,
+                            domain_allow_underscore => 1,
+                          },
+                );
   }
 
   sub srv_valid_domain {
@@ -37,15 +50,15 @@ package MyDNS::API::Domain::Validate 0.01 {
     $domain =~ s/\.$//;
     return
       is_domain( $domain, {
-                          domain_private_tld => qr/./,
-                          domain_allow_underscore => 1,
-                        },
+                            domain_private_tld => qr/[a-z]/,
+                            domain_allow_underscore => 1,
+                          },
                 );
 
   }
 
   sub a {
-    args my $self;
+    my ($self) = @_;
 
     if (valid_domain($self->name) and is_ipv4($self->data)) {
       return 1;
