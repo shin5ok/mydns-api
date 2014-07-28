@@ -56,6 +56,22 @@ package MyDNS::API::Domain 0.01 {
 
   }
 
+  sub name_comp {
+    my $self = shift;
+    my $name = shift;
+
+    my $domain = $self->domain;
+    if ( $name !~ /\.$/ ) {
+      return sprintf "%s.%s", $name, $domain;
+    }
+    elsif ( $name !~ /\.(?:$domain)$/ ) {
+      croak "*** $name is invalid";
+
+    }
+    return $name;
+
+  }
+
   sub domain {
      my $self   = shift;
      my $domain = shift;
@@ -351,7 +367,7 @@ package MyDNS::API::Domain 0.01 {
 
         if ($rr->{type}) {
 
-          my $name  = $rr->{name};
+          my $name  = $self->name_comp($rr->{name});
           my $type  = $rr->{type};
 
           {
