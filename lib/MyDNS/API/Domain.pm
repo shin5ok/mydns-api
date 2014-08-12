@@ -64,7 +64,7 @@ package MyDNS::API::Domain 0.01 {
     if ( $name !~ /\.$/ ) {
       return sprintf "%s.%s", $name, $domain;
     }
-    elsif ( $name !~ /\.(?:$domain)$/ ) {
+    elsif ( $name !~ /\.?(?:$domain)$/ ) {
       croak "*** $name is invalid";
 
     }
@@ -367,15 +367,17 @@ package MyDNS::API::Domain 0.01 {
 
         if ($rr->{type}) {
 
-          my $name  = $self->name_comp($rr->{name});
-          my $type  = $rr->{type};
+          $rr->{name} = $self->name_comp($rr->{name});
+          my $type    = $rr->{type};
 
           {
-            my $check_type = lc $type;
-            my $check_args = +{ name => $name, data => $rr->{data} };
-            my $check_obj  = MyDNS::API::Domain::Validate->new( $check_args );
-            if ( ! $check_obj->$check_type ) {
-              croak "type:$type is invalid";
+            my $check_type = $type ? lc $type : "";
+            if ($check_type) {
+              my $check_args = +{ name => $rr->{name}, data => $rr->{data} };
+              my $check_obj  = MyDNS::API::Domain::Validate->new( $check_args );
+              if ( ! $check_obj->$check_type ) {
+                croak "type:$type is invalid";
+              }
             }
           }
 
